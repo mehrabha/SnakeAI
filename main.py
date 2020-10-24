@@ -1,5 +1,6 @@
 import numpy as np
 from snake import SnakeGame
+from models.bots import SnakeBot
 from tkinter import Tk, Canvas
 
 COLORS = [
@@ -11,11 +12,13 @@ COLORS = [
 
 WIDTH, HEIGHT = (16, 9)
 PIXEL_SIZE = 35
-GAME_SPEED = 5
+SPEED = 8
 
 global game
+global agent
 
 def draw_frame():
+    canvas.delete("all")
     matrix = game.generate_matrix()
     for i in range(WIDTH):
         for j in range(HEIGHT):
@@ -31,17 +34,19 @@ def draw_frame():
                 fill=COLORS[color],
                 outline=COLORS[0]
             )
-    game.move(1)
+    prediction = agent.predict(game.snake, game.food)
+    game.move(prediction)
     
     if game.over():
         game.begin()
-    root.after(400, draw_frame)
+    root.after(int(1000 / SPEED), draw_frame)
 
 
 # game
 resolution_x = PIXEL_SIZE * WIDTH
 resolution_y = PIXEL_SIZE * HEIGHT
 game = SnakeGame(WIDTH, HEIGHT)
+agent = SnakeBot(WIDTH, HEIGHT)
 game.begin()
 
 root = Tk()
@@ -49,5 +54,5 @@ root.title('Snake AI')
 canvas = Canvas(root, bg=COLORS[0], width=resolution_x, height=resolution_y)
 canvas.pack()
 
-root.after(400, draw_frame)
+root.after(100, draw_frame)
 root.mainloop()

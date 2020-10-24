@@ -19,6 +19,7 @@ class SnakeGame:
         self.status = True
 
     def move(self, direction):
+        print(self.snake)
         if not self.status:
             return
 
