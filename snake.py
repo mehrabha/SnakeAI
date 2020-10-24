@@ -8,27 +8,43 @@ class SnakeGame:
         self.snake = []
         self.food = (0, 0)
         self.shape = (width, height)
-        self.status = True
+        self.status = False
 
 
     def begin(self):
-        x = int(self.shape[0]/3)
-        y = int(self.shape[1]/3)
-        self.snake.extend([(x - 1, y), (x, y), (x + 1, y)])
+        x = int(self.shape[0]/random.choice([2,3,4]))
+        y = random.choice(range(self.shape[1]))
+        self.snake = [(x - 1, y), (x, y), (x + 1, y)]
         self.spawn_food()
-        self.status = False
+        self.status = True
 
     def move(self, direction):
-        snake = self.snake
-        print(snake)
-        for i in range(len(snake) - 1):
-            snake[i] = snake[i + 1]
+        if not self.status:
+            return
 
+        snake = self.snake
         # head
         x = snake[-1][0] + move_data[direction][0]
         y = snake[-1][1] + move_data[direction][1]
-        snake[-1] = (x, y)
 
+        # check collision
+        self.status = (
+            0 <= x < self.shape[0] and
+            0 <= y < self.shape[1] and
+            (x, y) not in snake
+        )
+        
+        if self.status:
+            # check food
+            food = self.food
+            if x == food[0] and y == food[1]:
+                snake.append(food)
+                self.spawn_food()
+            else:
+            # move
+                for i in range(len(snake) - 1):
+                    snake[i] = snake[i + 1]
+                snake[-1] = (x, y)
 
     def generate_matrix(self):
         matrix = np.zeros(shape=self.shape, dtype=np.int32)
@@ -45,7 +61,7 @@ class SnakeGame:
         return matrix
 
     def over(self):
-        return self.status
+        return not self.status
 
 
     def spawn_food(self):

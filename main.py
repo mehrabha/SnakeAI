@@ -13,6 +13,8 @@ WIDTH, HEIGHT = (16, 9)
 PIXEL_SIZE = 35
 GAME_SPEED = 5
 
+global game
+
 def draw_frame():
     matrix = game.generate_matrix()
     for i in range(WIDTH):
@@ -29,12 +31,18 @@ def draw_frame():
                 fill=COLORS[color],
                 outline=COLORS[0]
             )
+    game.move(1)
+    
+    if game.over():
+        game.begin()
     root.after(400, draw_frame)
 
 
 # game
 resolution_x = PIXEL_SIZE * WIDTH
 resolution_y = PIXEL_SIZE * HEIGHT
+game = SnakeGame(WIDTH, HEIGHT)
+game.begin()
 
 root = Tk()
 root.title('Snake AI')
