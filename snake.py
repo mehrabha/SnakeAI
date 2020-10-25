@@ -1,9 +1,40 @@
 import numpy as np
 import random
 
+# [up, right, down, left]
 move_data = [(0, 1), (1, 0), (0, -1), (-1, 0)]
 
 class SnakeGame:
+    """
+    Class to represent a game of snake
+
+
+    Attributes
+    ----------
+    snake : list of tuples
+        List containing the locations of snake.
+        Last element in the list is head, rest are tails
+    food : tuple
+        Location of food.
+    shape : tuple
+        Matrix size
+    status : bool
+        True while game is running
+
+
+    Methods
+    -------
+    begin():
+        Restart game, starting snake length = 3
+    move(int):
+        Move snake using the move_data array, check collision and food.
+    generate_matrix():
+        Return a width by height matrix representing the current frame.
+    over():
+        Returns true if game over
+    """
+
+    
     def __init__(self, width, height):
         self.snake = []
         self.food = (0, 0)
@@ -17,6 +48,7 @@ class SnakeGame:
         self.snake = [(x - 1, y), (x, y), (x + 1, y)]
         self.spawn_food()
         self.status = True
+
 
     def move(self, direction):
         print(self.snake)
@@ -47,6 +79,7 @@ class SnakeGame:
                     snake[i] = snake[i + 1]
                 snake[-1] = (x, y)
 
+
     def generate_matrix(self):
         matrix = np.zeros(shape=self.shape, dtype=np.int32)
 
@@ -60,6 +93,7 @@ class SnakeGame:
         matrix[food[0]][food[1]] = 3
 
         return matrix
+
 
     def over(self):
         return not self.status

@@ -10,8 +10,8 @@ COLORS = [
     '#c9d5d6'
 ]
 
-WIDTH, HEIGHT = (16, 9)
-PIXEL_SIZE = 35
+WIDTH, HEIGHT = (16, 9) # Matrix size
+PIXEL_SIZE = 35 # Resolution of each box
 SPEED = 8
 
 global game
@@ -19,6 +19,8 @@ global agent
 
 def draw_frame():
     canvas.delete("all")
+
+    # Generate a matrix based on game state
     matrix = game.generate_matrix()
     for i in range(WIDTH):
         for j in range(HEIGHT):
@@ -34,19 +36,25 @@ def draw_frame():
                 fill=COLORS[color],
                 outline=COLORS[0]
             )
+    
+    # The AI controller
     prediction = agent.predict(game.snake, game.food)
+
+    # Move snake based on prediction
     game.move(prediction)
     
+    # Restart on collision
     if game.over():
         game.begin()
+    
     root.after(int(1000 / SPEED), draw_frame)
 
 
 # game
 resolution_x = PIXEL_SIZE * WIDTH
 resolution_y = PIXEL_SIZE * HEIGHT
-game = SnakeGame(WIDTH, HEIGHT)
-agent = SnakeBot(WIDTH, HEIGHT)
+game = SnakeGame(WIDTH, HEIGHT) # Initialize new game
+agent = SnakeBot(WIDTH, HEIGHT) # Initialize bot
 game.begin()
 
 root = Tk()
