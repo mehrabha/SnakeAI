@@ -51,7 +51,6 @@ class SnakeGame:
 
 
     def move(self, direction):
-        print(self.snake)
         if not self.status:
             return
 
@@ -107,4 +106,7 @@ class SnakeGame:
             self.spawn_food()
         else:
             self.food = (x, y)
+
+    def score(self):
+        return len(self.snake) - 3
 

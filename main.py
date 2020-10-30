@@ -10,9 +10,9 @@ COLORS = [
     '#c9d5d6'
 ]
 
-WIDTH, HEIGHT = (16, 9) # Matrix size
+WIDTH, HEIGHT = (16, 10) # Matrix size
 PIXEL_SIZE = 35 # Resolution of each box
-SPEED = 8
+SPEED = 15
 
 global game
 global agent
@@ -42,7 +42,8 @@ def draw_frame():
 
     # Move snake based on prediction
     game.move(prediction)
-    
+    print("Score:", game.score(), "State:", agent.get_state(game.snake))
+
     # Restart on collision
     if game.over():
         game.begin()
