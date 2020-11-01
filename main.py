@@ -12,7 +12,7 @@ COLORS = [
 
 WIDTH, HEIGHT = (16, 10) # Matrix size
 PIXEL_SIZE = 35 # Resolution of each box
-SPEED = 15
+SPEED = 10
 
 global game
 global agent
