@@ -1,6 +1,7 @@
 import numpy as np
 from snake import SnakeGame
 from models.bots import SnakeBot
+from models.dq_agent import Agent
 from tkinter import Tk, Canvas
 
 COLORS = [
@@ -10,13 +11,38 @@ COLORS = [
     '#c9d5d6'
 ]
 
-WIDTH, HEIGHT = (16, 10) # Matrix size
+WIDTH, HEIGHT = (10, 10) # Matrix size
 PIXEL_SIZE = 35 # Resolution of each box
 SPEED = 10
 
 global game
 global agent
 
+
+def train(nsteps):
+    for i in range(nsteps):
+        if i % 1000 == 0:
+            print("Progress:", i, 'trained out of', nsteps)
+        state = np.asarray(game.generate_matrix(), dtype=np.float32).flatten()
+        
+        # The AI controller
+        prediction = agent.predict(state)
+        # Move snake based on prediction
+        score_old = game.score()
+        game.move(prediction)
+        
+        # Restart on collision, adjust score
+        if game.over():
+            game.begin()
+            score_new = -1
+        else:
+            score_new = game.score()
+        
+        # Train AI for every step
+        score_diff = (score_new - score_old) * 5
+        agent.store(state, prediction, score_diff)
+        agent.learn()
+    
 def draw_frame():
     canvas.delete("all")
 
@@ -36,13 +62,18 @@ def draw_frame():
                 fill=COLORS[color],
                 outline=COLORS[0]
             )
+    state = np.asarray(matrix, dtype=np.float32).flatten()
     
     # The AI controller
-    prediction = agent.predict(game.snake, game.food)
-
+    #prediction = agent.predict(game.snake, game.food)
+    
+    # Deep Learning Agent
+    prediction = agent.predict(state)
+    
     # Move snake based on prediction
     game.move(prediction)
-    print("Score:", game.score(), "State:", agent.get_state(game.snake))
+    print("Score:", game.score()) #, "State:", agent.get_state(game.snake))
+
 
     # Restart on collision
     if game.over():
@@ -54,14 +85,21 @@ def draw_frame():
 # game
 resolution_x = PIXEL_SIZE * WIDTH
 resolution_y = PIXEL_SIZE * HEIGHT
+training_steps = 2000
+
 game = SnakeGame(WIDTH, HEIGHT) # Initialize new game
-agent = SnakeBot(WIDTH, HEIGHT) # Initialize bot
+agent = Agent(inp_dim=[WIDTH * HEIGHT], out_dim=4, 
+              mem_size=training_steps) # Initialize agent
+#agent = SnakeBot(WIDTH, HEIGHT)
+
 game.begin()
+train(training_steps) # Main training loop
 
 root = Tk()
 root.title('Snake AI')
 canvas = Canvas(root, bg=COLORS[0], width=resolution_x, height=resolution_y)
 canvas.pack()
 
-root.after(100, draw_frame)
+game.begin()
+root.after(100, draw_frame) # Visualize agent playing the game
 root.mainloop()

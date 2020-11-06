@@ -40,6 +40,7 @@ class SnakeGame:
         self.food = (0, 0)
         self.shape = (width, height)
         self.status = False
+        self.dir = 1
 
 
     def begin(self):
