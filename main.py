@@ -11,7 +11,7 @@ COLORS = [
     '#c9d5d6'
 ]
 
-WIDTH, HEIGHT = (10, 10) # Matrix size
+WIDTH, HEIGHT = (20, 20) # Matrix size
 PIXEL_SIZE = 35 # Resolution of each box
 SPEED = 10
 
@@ -39,7 +39,7 @@ def train(nsteps):
             score_new = game.score()
         
         # Train AI for every step
-        score_diff = (score_new - score_old) * 5
+        score_diff = (score_new - score_old)
         agent.store(state, prediction, score_diff)
         agent.learn()
     
