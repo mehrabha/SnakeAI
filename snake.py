@@ -41,6 +41,7 @@ class SnakeGame:
         self.shape = (width, height)
         self.status = False
         self.dir = 1
+        self.begin()
 
 
     def begin(self):
@@ -102,7 +103,6 @@ class SnakeGame:
     def spawn_food(self):
         x = random.randint(0, self.shape[0] - 1)
         y = random.randint(0, self.shape[1] - 1)
-
         if (x, y) in self.snake:
             self.spawn_food()
         else:
@@ -110,4 +110,11 @@ class SnakeGame:
 
     def score(self):
         return len(self.snake) - 3
+    
+    def get_distance(self):
+        food = self.food
+        snake = self.snake
+        x = abs(food[0] - snake[-1][0])
+        y = abs(food[1] - snake[-1][1])
+        return x + y
 

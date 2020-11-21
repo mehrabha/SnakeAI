@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as f
 import torch.optim as optim
 import numpy as np
+import time
 
 
 class NeuralNetwork(nn.Module):
@@ -12,11 +13,13 @@ class NeuralNetwork(nn.Module):
         self.layer1 = nn.Linear(*inp_dim, l1_dim)
         self.layer2 = nn.Linear(l1_dim, l2_dim)
         self.output = nn.Linear(l2_dim, out_dim)
-        self.optimizer = optim.Adam(self.parameters())
+        self.optimizer = optim.Adam(self.parameters(), lr=.05)
         self.loss = nn.MSELoss()
+        self.device = t.device('cuda:0')
+        self.to(self.device)
     
     def forward(self, state):
-        inp = t.tensor(state)
+        inp = t.tensor(state).to(self.device)
         x = self.layer1(inp)
         x = f.relu(x)
         x = self.layer2(x)
@@ -28,7 +31,7 @@ class NeuralNetwork(nn.Module):
     
 class Agent:
     def __init__(self, inp_dim, out_dim, mem_size):
-        self.nn = NeuralNetwork(inp_dim, 72, 72, out_dim)
+        self.nn = NeuralNetwork(inp_dim, 60, 60, out_dim)
         self.mem_size = mem_size
         self.learned = 0
         self.states = np.zeros((mem_size, inp_dim[0]), dtype=np.float32)
@@ -51,12 +54,12 @@ class Agent:
         
         bound = min(self.mem_size, self.learned)
         
-        states = t.tensor(self.states[: bound])
-        rewards = t.tensor(self.rewards[: bound])
+        states = self.states[: bound]
+        rewards = t.tensor(self.rewards[: bound]).to(self.nn.device)
         
         
-        q_eval = self.nn.forward(states)
-        q_target = self.nn.forward(states)
+        q_eval = self.nn.forward(states).to(self.nn.device)
+        q_target = self.nn.forward(states).to(self.nn.device)
         
         indexes = np.arange(bound, dtype=np.int32)
         
@@ -65,14 +68,14 @@ class Agent:
         action_indexes = np.dot(actions, action_values)
         q_target[indexes, action_indexes] = rewards
         
-        loss = self.nn.loss(q_target, q_eval)
+        loss = self.nn.loss(q_target, q_eval).to(self.nn.device)
         loss.backward()
         self.nn.optimizer.step()
         
         
     def predict(self, state):
         rand = np.random.random()
-        if rand > 0.01:
+        if rand > 0.03:
             probabilities = self.nn.forward(state)
             action = t.argmax(probabilities).item()
             return action
