@@ -1,4 +1,5 @@
 import numpy as np
+import torch as t
 import random
 
 # [up, right, down, left]
@@ -50,16 +51,27 @@ class SnakeGame:
         self.snake = [(x - 1, y), (x, y), (x + 1, y)]
         self.spawn_food()
         self.status = True
+        self.dir = 1
 
 
     def move(self, direction):
         if not self.status:
             return
+        
+        backwards = (
+            (self.dir == 0 and direction == 2) or
+            (self.dir == 2 and direction == 0) or
+            (self.dir == 1 and direction == 3) or
+            (self.dir == 3 and direction == 1)
+        )
+
+        if not backwards and self.dir != direction:
+            self.dir = direction
 
         snake = self.snake
         # head
-        x = snake[-1][0] + move_data[direction][0]
-        y = snake[-1][1] + move_data[direction][1]
+        x = snake[-1][0] + move_data[self.dir][0]
+        y = snake[-1][1] + move_data[self.dir][1]
 
         # check collision
         self.status = (
@@ -94,7 +106,20 @@ class SnakeGame:
         matrix[food[0]][food[1]] = 3
 
         return matrix
+    
+    def get_tensor(self):
+        matrix = t.zeros(self.shape, dtype=t.float32)
 
+        for x, y in self.snake:
+            matrix[x][y] = 1
+        
+        head = self.snake[-1]
+        matrix[head[0]][head[1]] = 2
+
+        food = self.food
+        matrix[food[0]][food[1]] = 3
+
+        return matrix.flatten()
 
     def over(self):
         return not self.status

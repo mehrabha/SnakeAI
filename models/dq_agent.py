@@ -13,13 +13,13 @@ class NeuralNetwork(nn.Module):
         self.layer1 = nn.Linear(*inp_dim, l1_dim)
         self.layer2 = nn.Linear(l1_dim, l2_dim)
         self.output = nn.Linear(l2_dim, out_dim)
-        self.optimizer = optim.Adam(self.parameters(), lr=.05)
+        self.optimizer = optim.Adam(self.parameters())
         self.loss = nn.MSELoss()
         self.device = t.device('cuda:0')
         self.to(self.device)
     
     def forward(self, state):
-        inp = t.tensor(state).to(self.device)
+        inp = state.to(self.device)
         x = self.layer1(inp)
         x = f.relu(x)
         x = self.layer2(x)
@@ -34,19 +34,17 @@ class Agent:
         self.nn = NeuralNetwork(inp_dim, 60, 60, out_dim)
         self.mem_size = mem_size
         self.learned = 0
-        self.states = np.zeros((mem_size, inp_dim[0]), dtype=np.float32)
-        self.actions = np.zeros((mem_size, out_dim), dtype=np.float32)
-        self.rewards = np.zeros(mem_size, dtype=np.float32)
-        
-        self.action_space = list(range(out_dim)) # Workaround
+        self.states = t.zeros((mem_size, inp_dim[0]), dtype=t.float32).to(self.nn.device)
+        self.actions = t.zeros((mem_size, out_dim), dtype=t.float32).to(self.nn.device)
+
         
     def store(self, state, action, reward):
         indx = self.learned
         if indx >= self.mem_size:
-            indx = self.mem_size % indx
-        self.states[indx] = state
-        self.actions[indx][action] = 1.0
-        self.rewards[indx] = reward
+            indx = indx % self.mem_size
+        self.states[indx] = state.to(self.nn.device)
+        self.actions[indx] = t.zeros(self.actions.shape[1]).to(self.nn.device)
+        self.actions[indx][action] = reward
         self.learned += 1
         
     def learn(self):
@@ -54,28 +52,19 @@ class Agent:
         
         bound = min(self.mem_size, self.learned)
         
-        states = self.states[: bound]
-        rewards = t.tensor(self.rewards[: bound]).to(self.nn.device)
-        
-        
+        states = self.states[: bound].to(self.nn.device)
         q_eval = self.nn.forward(states).to(self.nn.device)
-        q_target = self.nn.forward(states).to(self.nn.device)
         
-        indexes = np.arange(bound, dtype=np.int32)
-        
-        actions = self.actions[: bound]
-        action_values = np.array(self.action_space, dtype=np.uint8)
-        action_indexes = np.dot(actions, action_values)
-        q_target[indexes, action_indexes] = rewards
+        q_target = self.actions[: bound].to(self.nn.device)
         
         loss = self.nn.loss(q_target, q_eval).to(self.nn.device)
         loss.backward()
         self.nn.optimizer.step()
         
         
-    def predict(self, state):
+    def predict(self, state, randomness=0):
         rand = np.random.random()
-        if rand > 0.03:
+        if rand > randomness:
             probabilities = self.nn.forward(state)
             action = t.argmax(probabilities).item()
             return action
