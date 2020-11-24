@@ -107,7 +107,7 @@ class SnakeGame:
 
         return matrix
     
-    def get_float_matrix(self):
+    def get_flat_matrix(self):
         matrix = np.zeros(self.shape, dtype=np.float32)
 
         for x, y in self.snake:

@@ -26,7 +26,7 @@ def draw_frame():
 
     # Generate a matrix based on game state
     matrix = game.generate_matrix()
-    state = game.get_float_matrix()
+    state = game.get_flat_matrix()
     for i in range(WIDTH):
         for j in range(HEIGHT):
             color = matrix[i][j]
@@ -57,8 +57,7 @@ def draw_frame():
 
 
 # Initialize deep learning agent
-agent = Agent(inp_dim=[WIDTH * HEIGHT], out_dim=4, gamma=0, lr=.03,
-              batch_size=256, mem_size=50000)
+agent = Agent(inp_dim=[WIDTH * HEIGHT], out_dim=4)
 
 # Load nn
 agent.load_nn(PATH + FILENAME)

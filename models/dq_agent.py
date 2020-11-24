@@ -29,14 +29,24 @@ class NeuralNetwork(nn.Module):
         return out
     
 class Agent:
-    def __init__(self, inp_dim, out_dim, gamma, lr, batch_size, mem_size):
+    def __init__(self, inp_dim, out_dim, gamma=.99, 
+                 lr=.03, batch_size=256, mem_size=100000):
         self.nn = NeuralNetwork(lr, inp_dim, 256, 256, out_dim)
         
-        self.states = t.zeros((mem_size, inp_dim[0]), dtype=t.float32)
-        self.states_batch = t.zeros((batch_size, inp_dim[0]), dtype=t.float32)
+        self.states = np.zeros((mem_size, inp_dim[0]), dtype=np.float32)
+        self.states_batch = np.zeros((batch_size, inp_dim[0]), dtype=np.float32)
         
-        self.actions = t.zeros((mem_size, out_dim), dtype=t.float32)
-        self.actions_batch = t.zeros((batch_size, out_dim), dtype=t.float32)
+        self.actions = np.zeros(mem_size, dtype=np.int32)
+        self.actions_batch = np.zeros(batch_size, dtype=np.int32)
+        
+        self.rewards = np.zeros(mem_size, dtype=np.float32)
+        self.rewards_batch = np.zeros(batch_size, dtype=np.float32)
+        
+        self.new_states = np.zeros((mem_size, inp_dim[0]), dtype=np.float32)
+        self.new_states_batch = np.zeros((batch_size, inp_dim[0]), dtype=np.float32)
+        
+        self.terminal = np.zeros(mem_size, dtype=np.bool)
+        self.terminal_batch = np.zeros(batch_size, dtype=np.bool)
         
         self.gamma = gamma
         self.batch_size = batch_size
@@ -45,13 +55,17 @@ class Agent:
         self.learned = 0
         self.batch_indx = 0
         
-    def store(self, state, action, reward):
+    def store(self, state, action, reward, new_state, terminated):
         indx = self.learned
         if indx >= self.mem_size:
             indx = indx % self.mem_size
-        self.states[indx] = t.tensor(state)
-        self.actions[indx] = t.zeros(self.actions.shape[1])
-        self.actions[indx][action] = reward
+            
+        self.states[indx] = state
+        self.new_states[indx] = new_state
+        self.actions[indx] = action
+        self.rewards[indx] = reward
+        self.terminal[indx] = terminated
+        
         self.learned += 1
         
     def learn(self):
@@ -61,16 +75,27 @@ class Agent:
         
         self.states_batch[batch_indx] = self.states[exp_indx]
         self.actions_batch[batch_indx] = self.actions[exp_indx]
+        self.rewards_batch[batch_indx] = self.rewards[exp_indx]
+        self.new_states_batch[batch_indx] = self.new_states[exp_indx]
+        self.terminal_batch[batch_indx] = self.terminal[exp_indx]
         
         self.batch_indx = (batch_indx + 1) % self.batch_size
         
-        if self.batch_indx < self.learned:
+        if self.learned < self.batch_size:
             return
         
         self.nn.optimizer.zero_grad()
-        states = self.states_batch.to(self.nn.device)
-        q_eval = self.nn.forward(states).to(self.nn.device)
-        q_target = self.actions_batch.to(self.nn.device)
+        
+        states = t.tensor(self.states[:bound]).to(self.nn.device)
+        new_states = t.tensor(self.new_states[:bound]).to(self.nn.device)
+        rewards = t.tensor(self.rewards[:bound]).to(self.nn.device)
+        terminal = t.tensor(self.terminal[:bound]).to(self.nn.device)
+        indexes = np.arange(bound)
+        
+        q_eval = self.nn.forward(states)[indexes, self.actions[:bound]]
+        q_next = self.nn.forward(new_states)
+        q_next[terminal] = 0.0
+        q_target = rewards #+ self.gamma * t.max(q_next, dim=1)[0]
         
         
         loss = self.nn.loss(q_target, q_eval).to(self.nn.device)

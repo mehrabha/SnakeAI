@@ -13,13 +13,13 @@ FILENAME = 'nn.pth'
 global game
 global agent
 
-def train(path, steps, eps=.8, decay=.002):
+def train(path, loops, steps, eps=.01, decay=0, eps_min=.01):
     agent.save_nn(path)
-    for i in range(steps):
-        print('Progress:', round(100 * i/steps, 2),
+    for i in range(loops):
+        print('Progress:', round(100 * i/loops, 2),
               '%   Current eps=', round(eps, 3))
-        for j in range(100000):
-            state = game.get_float_matrix()
+        for j in range(steps):
+            state = game.get_flat_matrix()
             
             # Before move
             score_diff = game.score()
@@ -28,6 +28,8 @@ def train(path, steps, eps=.8, decay=.002):
             # Move snake based on prediction
             prediction = agent.predict(state, eps)
             game.move(prediction)
+            new_state = game.get_flat_matrix()
+            terminated = game.over()
             
             # Restart on collision, adjust score
             if game.over():
@@ -40,19 +42,19 @@ def train(path, steps, eps=.8, decay=.002):
                     distance_rewards = 0
                 else:
                     distance_rewards -= game.get_distance()
-                
-            reward = 5*score_diff + distance_rewards * .5
-            agent.store(state, prediction, reward)
+            
+            reward = score_diff + distance_rewards * .1
+            agent.store(state, prediction, reward, new_state, terminated)
             agent.learn()
             
         # Save state every few runs
         if i % 10 == 0:
             agent.save_nn(path)
-        eps -= decay
+        eps = max(eps - decay, eps_min)
 
 game = SnakeGame(WIDTH, HEIGHT)
-agent = Agent(inp_dim=[WIDTH * HEIGHT], out_dim=4, gamma=0, lr=.03,
+agent = Agent(inp_dim=[WIDTH * HEIGHT], out_dim=4, gamma=.99, lr=.03,
           batch_size=256, mem_size=100000)
-train(PATH + FILENAME, steps=390)
+train(PATH + FILENAME, loops=10, steps=1000)
     
     
