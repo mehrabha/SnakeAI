@@ -1,3 +1,4 @@
+import time
 from snake import SnakeGame
 from models.dq_agent import Agent
 
@@ -47,8 +48,14 @@ game = SnakeGame(WIDTH, HEIGHT)
 agent.save_nn(PATH + FILENAME)
 ep = .8
 for i in range(95):
-    print('Group', i, of 95,  '  EP:', ep)
+    print('Group', i, 'of', 95, '( EP:', ep, ')')
+    
+    start = time.time()
     train(training_steps, randomness=ep)
+    end = time.time()
+    
+    print('  - Done! (', round(end - start, 2), 'seconds )')
+    
     ep -= .08
     agent.save_nn(PATH + FILENAME)
     
