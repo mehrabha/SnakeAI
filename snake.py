@@ -107,8 +107,8 @@ class SnakeGame:
 
         return matrix
     
-    def get_tensor(self):
-        matrix = t.zeros(self.shape, dtype=t.float32)
+    def get_float_matrix(self):
+        matrix = np.zeros(self.shape, dtype=np.float32)
 
         for x, y in self.snake:
             matrix[x][y] = 1

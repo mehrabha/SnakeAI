@@ -7,20 +7,19 @@ import time
 
 
 class NeuralNetwork(nn.Module):
-    def __init__(self, inp_dim, l1_dim, l2_dim, out_dim):
+    def __init__(self, lr, inp_dim, l1_dim, l2_dim, out_dim):
         super(NeuralNetwork, self).__init__()
         
         self.layer1 = nn.Linear(*inp_dim, l1_dim)
         self.layer2 = nn.Linear(l1_dim, l2_dim)
         self.output = nn.Linear(l2_dim, out_dim)
-        self.optimizer = optim.Adam(self.parameters())
+        self.optimizer = optim.Adam(self.parameters(), lr=lr)
         self.loss = nn.MSELoss()
         self.device = t.device('cuda:0')
         self.to(self.device)
     
     def forward(self, state):
-        inp = state.to(self.device)
-        x = self.layer1(inp)
+        x = self.layer1(state)
         x = f.relu(x)
         x = self.layer2(x)
         x = f.relu(x)
@@ -30,20 +29,27 @@ class NeuralNetwork(nn.Module):
         return out
     
 class Agent:
-    def __init__(self, inp_dim, out_dim, mem_size):
-        self.nn = NeuralNetwork(inp_dim, 60, 60, out_dim)
+    def __init__(self, inp_dim, out_dim, gamma, lr,
+                 eps, eps_min, eps_decay, batch_size, mem_size):
+        self.nn = NeuralNetwork(lr, inp_dim, 256, 256, out_dim)
+        self.states = t.zeros((mem_size, inp_dim[0]), dtype=t.float32)
+        self.actions = t.zeros((mem_size, out_dim), dtype=t.float32)
+        
+        self.gamma = gamma
+        self.eps = eps
+        self.eps_min = eps_min
+        self.eps_decay = eps_decay
+        self.batch_size = batch_size
         self.mem_size = mem_size
+        
         self.learned = 0
-        self.states = t.zeros((mem_size, inp_dim[0]), dtype=t.float32).to(self.nn.device)
-        self.actions = t.zeros((mem_size, out_dim), dtype=t.float32).to(self.nn.device)
-
         
     def store(self, state, action, reward):
         indx = self.learned
         if indx >= self.mem_size:
             indx = indx % self.mem_size
-        self.states[indx] = state.to(self.nn.device)
-        self.actions[indx] = t.zeros(self.actions.shape[1]).to(self.nn.device)
+        self.states[indx] = t.tensor(state)
+        self.actions[indx] = t.zeros(self.actions.shape[1])
         self.actions[indx][action] = reward
         self.learned += 1
         
@@ -54,7 +60,6 @@ class Agent:
         
         states = self.states[: bound].to(self.nn.device)
         q_eval = self.nn.forward(states).to(self.nn.device)
-        
         q_target = self.actions[: bound].to(self.nn.device)
         
         loss = self.nn.loss(q_target, q_eval).to(self.nn.device)
@@ -65,6 +70,7 @@ class Agent:
     def predict(self, state, randomness=0):
         rand = np.random.random()
         if rand > randomness:
+            state = t.tensor([state]).to(self.nn.device)
             probabilities = self.nn.forward(state)
             action = t.argmax(probabilities).item()
             return action

@@ -1,4 +1,4 @@
-# [up, right, down, left]
+# [down, right, up, left]
 move_data = [(0, 1), (1, 0), (0, -1), (-1, 0)]
 
 # Returns manhatan distance
