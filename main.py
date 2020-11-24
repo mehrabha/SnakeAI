@@ -58,7 +58,6 @@ def draw_frame():
 
 # Initialize deep learning agent
 agent = Agent(inp_dim=[WIDTH * HEIGHT], out_dim=4, gamma=0, lr=.03,
-              eps=0, eps_min=0,eps_decay=0,
               batch_size=256, mem_size=50000)
 
 # Load nn

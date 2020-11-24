@@ -29,9 +29,8 @@ class NeuralNetwork(nn.Module):
         return out
     
 class Agent:
-    def __init__(self, inp_dim, out_dim, gamma, lr,
-                 eps, eps_min, eps_decay, batch_size, mem_size):
-        self.nn = NeuralNetwork(lr, inp_dim, 128, 128, out_dim)
+    def __init__(self, inp_dim, out_dim, gamma, lr, batch_size, mem_size):
+        self.nn = NeuralNetwork(lr, inp_dim, 256, 256, out_dim)
         
         self.states = t.zeros((mem_size, inp_dim[0]), dtype=t.float32)
         self.states_batch = t.zeros((batch_size, inp_dim[0]), dtype=t.float32)
@@ -40,9 +39,6 @@ class Agent:
         self.actions_batch = t.zeros((batch_size, out_dim), dtype=t.float32)
         
         self.gamma = gamma
-        self.eps = eps
-        self.eps_min = eps_min
-        self.eps_decay = eps_decay
         self.batch_size = batch_size
         self.mem_size = mem_size
         
