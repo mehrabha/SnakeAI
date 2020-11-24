@@ -31,9 +31,13 @@ class NeuralNetwork(nn.Module):
 class Agent:
     def __init__(self, inp_dim, out_dim, gamma, lr,
                  eps, eps_min, eps_decay, batch_size, mem_size):
-        self.nn = NeuralNetwork(lr, inp_dim, 256, 256, out_dim)
+        self.nn = NeuralNetwork(lr, inp_dim, 128, 128, out_dim)
+        
         self.states = t.zeros((mem_size, inp_dim[0]), dtype=t.float32)
+        self.states_batch = t.zeros((batch_size, inp_dim[0]), dtype=t.float32)
+        
         self.actions = t.zeros((mem_size, out_dim), dtype=t.float32)
+        self.actions_batch = t.zeros((batch_size, out_dim), dtype=t.float32)
         
         self.gamma = gamma
         self.eps = eps
@@ -43,6 +47,7 @@ class Agent:
         self.mem_size = mem_size
         
         self.learned = 0
+        self.batch_indx = 0
         
     def store(self, state, action, reward):
         indx = self.learned
@@ -54,13 +59,23 @@ class Agent:
         self.learned += 1
         
     def learn(self):
-        self.nn.optimizer.zero_grad()
-        
+        batch_indx = self.batch_indx
         bound = min(self.mem_size, self.learned)
+        exp_indx = np.random.choice(bound)
         
-        states = self.states[: bound].to(self.nn.device)
+        self.states_batch[batch_indx] = self.states[exp_indx]
+        self.actions_batch[batch_indx] = self.actions[exp_indx]
+        
+        self.batch_indx = (batch_indx + 1) % self.batch_size
+        
+        if self.batch_indx < self.learned:
+            return
+        
+        self.nn.optimizer.zero_grad()
+        states = self.states_batch.to(self.nn.device)
         q_eval = self.nn.forward(states).to(self.nn.device)
-        q_target = self.actions[: bound].to(self.nn.device)
+        q_target = self.actions_batch.to(self.nn.device)
+        
         
         loss = self.nn.loss(q_target, q_eval).to(self.nn.device)
         loss.backward()

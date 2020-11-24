@@ -14,7 +14,7 @@ COLORS = [
 
 WIDTH, HEIGHT = (10, 10) # Matrix size
 PIXEL_SIZE = 35 # Resolution of each box
-SPEED = 10
+SPEED = 8
 
 global game
 global agent
@@ -38,16 +38,16 @@ def train(nsteps, randomness=0):
         # Restart on collision, adjust score
         if game.over():
             game.begin()
-            score_diff = -5
+            score_diff = -1
             distance_rewards = -1
         else:
-            score_diff = (game.score() - score_diff) * 5
+            score_diff = (game.score() - score_diff)
             if score_diff > 0:
                 distance_rewards = 0
             else:
                 distance_rewards -= game.get_distance()
             
-        reward = 5*score_diff + distance_rewards
+        reward = 5*score_diff + distance_rewards * .5
         agent.store(state, prediction, reward)
         agent.learn()
     
@@ -77,7 +77,6 @@ def draw_frame():
     
     # Deep Learning Agent
     prediction = agent.predict(state)
-    
     # Move snake based on prediction
     game.move(prediction)
     # Restart on collision
@@ -90,18 +89,18 @@ def draw_frame():
 # game
 resolution_x = PIXEL_SIZE * WIDTH
 resolution_y = PIXEL_SIZE * HEIGHT
-training_steps = 10000
+training_steps = 100000
 agent = Agent(inp_dim=[WIDTH * HEIGHT], out_dim=4, gamma=0, lr=.03,
               eps=0, eps_min=0,eps_decay=0,
-              batch_size=0, mem_size=20000) # Initialize agent
+              batch_size=256, mem_size=50000) # Initialize agent
 #agent = SnakeBot(WIDTH, HEIGHT)
 
 game = SnakeGame(WIDTH, HEIGHT)
-ep = .64
-for i in range(5):
+ep = .8
+for i in range(20):
     print('Group', i, '( ep =', ep, '):')
     train(training_steps, randomness=ep)
-    ep *= .5
+    ep *= .8
 
 game.begin()
 root = Tk()
