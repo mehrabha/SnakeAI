@@ -91,4 +91,11 @@ class Agent:
             return action
         else:
             return np.random.randint(4)
+    
+    def load_nn(self, path):
+        self.nn.load_state_dict(t.load(path))
+        self.nn.eval()
+        
+    def save_nn(self, path):
+        t.save(self.nn.state_dict(), path)
         

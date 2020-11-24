@@ -1,9 +1,8 @@
-import numpy as np
-import torch as t
 from snake import SnakeGame
 from models.bots import SnakeBot
-from models.dq_agent import Agent, NeuralNetwork
+from models.dq_agent import Agent
 from tkinter import Tk, Canvas
+
 
 COLORS = [
     '#001A23',
@@ -16,40 +15,11 @@ WIDTH, HEIGHT = (10, 10) # Matrix size
 PIXEL_SIZE = 35 # Resolution of each box
 SPEED = 8
 
+PATH = './nn/'
+FILENAME = 'nn.pth'
+
 global game
 global agent
-
-
-def train(nsteps, randomness=0):
-    for i in range(int(nsteps)):
-        if i % 1000 == 0:
-            print("Progress:", i, 'trained out of', nsteps)
-            
-        state = game.get_float_matrix()
-        
-        # Before move
-        score_diff = game.score()
-        distance_rewards = game.get_distance()
-        
-        # Move snake based on prediction
-        prediction = agent.predict(state, randomness)
-        game.move(prediction)
-        
-        # Restart on collision, adjust score
-        if game.over():
-            game.begin()
-            score_diff = -1
-            distance_rewards = -1
-        else:
-            score_diff = (game.score() - score_diff)
-            if score_diff > 0:
-                distance_rewards = 0
-            else:
-                distance_rewards -= game.get_distance()
-            
-        reward = 5*score_diff + distance_rewards * .5
-        agent.store(state, prediction, reward)
-        agent.learn()
     
 def draw_frame():
     canvas.delete("all")
@@ -86,21 +56,19 @@ def draw_frame():
     root.after(int(1000 / SPEED), draw_frame)
 
 
+# Initialize deep learning agent
+agent = Agent(inp_dim=[WIDTH * HEIGHT], out_dim=4, gamma=0, lr=.03,
+              eps=0, eps_min=0,eps_decay=0,
+              batch_size=256, mem_size=50000)
+
+# Load nn
+agent.load_nn(PATH + FILENAME)
+
+game = SnakeGame(WIDTH, HEIGHT)
+
 # game
 resolution_x = PIXEL_SIZE * WIDTH
 resolution_y = PIXEL_SIZE * HEIGHT
-training_steps = 100000
-agent = Agent(inp_dim=[WIDTH * HEIGHT], out_dim=4, gamma=0, lr=.03,
-              eps=0, eps_min=0,eps_decay=0,
-              batch_size=256, mem_size=50000) # Initialize agent
-#agent = SnakeBot(WIDTH, HEIGHT)
-
-game = SnakeGame(WIDTH, HEIGHT)
-ep = .8
-for i in range(20):
-    print('Group', i, '( ep =', ep, '):')
-    train(training_steps, randomness=ep)
-    ep *= .8
 
 game.begin()
 root = Tk()
