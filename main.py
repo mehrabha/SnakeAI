@@ -2,6 +2,7 @@ from snake import SnakeGame
 from models.bots import SnakeBot
 from models.dq_agent import Agent
 from tkinter import Tk, Canvas
+import numpy as np
 
 
 COLORS = [
@@ -16,7 +17,7 @@ PIXEL_SIZE = 35 # Resolution of each box
 SPEED = 8
 
 PATH = './nn/'
-FILENAME = 'nn.pth'
+FILENAME = 'nn1.pth'
 
 global game
 global agent
@@ -63,6 +64,7 @@ agent = Agent(inp_dim=[WIDTH * HEIGHT], out_dim=4)
 agent.load_nn(PATH + FILENAME)
 
 game = SnakeGame(WIDTH, HEIGHT)
+agent.predict(game.get_flat_matrix())
 
 # game
 resolution_x = PIXEL_SIZE * WIDTH
