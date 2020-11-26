@@ -17,7 +17,7 @@ PIXEL_SIZE = 35 # Resolution of each box
 SPEED = 8
 
 PATH = './nn/'
-FILENAME = 'nn1.pth'
+FILENAME = 'lr.0001_loops80_decay.02_gamma.95.pth'
 
 global game
 global agent

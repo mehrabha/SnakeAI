@@ -140,7 +140,7 @@ class SnakeGame:
             self.food = (x, y)
 
     def score(self):
-        return len(self.snake)**2
+        return len(self.snake)
     
     def get_distance(self):
         food = self.food
