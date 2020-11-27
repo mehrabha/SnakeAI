@@ -1,36 +1,11 @@
+from models.neural_nets import NeuralNetwork
 import torch as t
-import torch.nn as nn
-import torch.nn.functional as f
-import torch.optim as optim
 import numpy as np
 
-
-class NeuralNetwork(nn.Module):
-    def __init__(self, lr, inp_dim, l1_dim, l2_dim, out_dim):
-        super(NeuralNetwork, self).__init__()
-        
-        self.layer1 = nn.Linear(*inp_dim, l1_dim)
-        self.layer2 = nn.Linear(l1_dim, l2_dim)
-        self.output = nn.Linear(l2_dim, out_dim)
-        self.optimizer = optim.Adam(self.parameters(), lr=lr)
-        self.loss = nn.MSELoss()
-        self.device = t.device('cuda:0')
-        self.to(self.device)
-    
-    def forward(self, state):
-        x = self.layer1(state)
-        x = f.relu(x)
-        x = self.layer2(x)
-        x = f.relu(x)
-        
-        out = self.output(x)
-        
-        return out
-    
 class Agent:
-    def __init__(self, inp_dim, out_dim, gamma=.99, 
+    def __init__(self, inp_dim, out_dim, hidden_dims=128, gamma=.99, 
                  lr=.03, batch_size=256, mem_size=100000):
-        self.nn = NeuralNetwork(lr, inp_dim, 32, 32, out_dim)
+        self.nn = NeuralNetwork(lr, inp_dim, hidden_dims, out_dim)
         self.states = np.zeros((mem_size, inp_dim[0]), dtype=np.float32)
         self.actions = np.zeros(mem_size, dtype=np.int32)
         self.rewards = np.zeros(mem_size, dtype=np.float32)
