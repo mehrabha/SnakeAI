@@ -1,8 +1,7 @@
 import numpy as np
-import torch as t
 import random
 
-# [up, right, down, left]
+# [down, right, up, left]
 move_data = [(0, 1), (1, 0), (0, -1), (-1, 0)]
 
 class SnakeGame:
@@ -120,18 +119,67 @@ class SnakeGame:
             matrix[x][y] = i + 4
 
         head = self.snake[-1]
+        tail = self.snake[0]
         matrix[head[0]][head[1]] = 2
 
         food = self.food
         matrix[food[0]][food[1]] = 3
         
-        return matrix.flatten()
+        vision = np.zeros(12, dtype=np.float32)
+        
+        # Neighbor blocks
+        for i in range(len(move_data)):
+            x = move_data[i][0] + head[0]
+            y = move_data[i][1] + head[1]
+            
+            valid = (0 <= x < self.shape[0] and
+                     0 <= y < self.shape[1])
+            
+            if valid:
+                if matrix[x][y] == 0:
+                    vision[i] = 0
+                elif matrix[x][y] == 3:
+                    vision[i] = 1
+                else:
+                    vision[i] = -1
+            else:
+                vision[i] = -1
+        
+        # Food location
+        vision[4] = food[0]
+        vision[5] = food[1]
+        
+        # Food distance
+        vision[6] = self.get_distance()
+        
+        # Head location
+        vision[7] = head[0]
+        vision[8] = head[1]
+        
+        # Tail location
+        vision[9] = tail[0]
+        vision[10] = tail[1]
+        
+        # Direction
+        vision[11] = self.dir
+        
+        '''
+        print('Down:', vision[0], 'Right:', vision[1], 'Up:', vision[2], 'Left:', vision[3])
+        print('Food Location:', vision[4], vision[5], 'Distance:', vision[6])
+        print('Head:', vision[7], vision[8], 'Tail:', vision[9], vision[10])
+        print('Direction:', vision[11])
+        print('------------------------------------------------\n')
+        '''
+        return np.concatenate([matrix.flatten(), vision])
 
     def over(self):
         return not self.status
 
 
     def spawn_food(self):
+        if len(self.snake) == self.shape[0] * self.shape[1]:
+            self.begin()
+        
         x = random.randint(0, self.shape[0] - 1)
         y = random.randint(0, self.shape[1] - 1)
         if (x, y) in self.snake:

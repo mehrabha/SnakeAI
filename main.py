@@ -2,7 +2,6 @@ from snake import SnakeGame
 from models.bots import SnakeBot
 from models.dq_agent import Agent
 from tkinter import Tk, Canvas
-import numpy as np
 
 
 COLORS = [
@@ -12,12 +11,12 @@ COLORS = [
     '#c9d5d6'
 ]
 
-WIDTH, HEIGHT = (10, 10) # Matrix size
+WIDTH, HEIGHT = (6, 6) # Matrix size
 PIXEL_SIZE = 35 # Resolution of each box
-SPEED = 8
+SPEED = 10
 
 PATH = './nn/'
-FILENAME = 'lr.0001_loops80_decay.02_gamma.95.pth'
+FILENAME = '6x6.pth'
 
 global game
 global agent
@@ -47,7 +46,7 @@ def draw_frame():
     #prediction = agent.predict(game.snake, game.food)
     
     # Deep Learning Agent
-    prediction = agent.predict(state)
+    prediction = agent.predict(state, .1)
     # Move snake based on prediction
     game.move(prediction)
     # Restart on collision
@@ -58,7 +57,7 @@ def draw_frame():
 
 
 # Initialize deep learning agent
-agent = Agent(inp_dim=[WIDTH * HEIGHT], out_dim=4)
+agent = Agent(inp_dim=[WIDTH * HEIGHT + 12], l1_dim=256, l2_dim=256, out_dim=4)
 
 # Load nn
 agent.load_nn(PATH + FILENAME)

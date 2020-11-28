@@ -3,9 +3,9 @@ import torch as t
 import numpy as np
 
 class Agent:
-    def __init__(self, inp_dim, out_dim, hidden_dims=128, gamma=.99, 
+    def __init__(self, inp_dim, l1_dim, l2_dim, out_dim, gamma=.99, 
                  lr=.03, batch_size=256, mem_size=100000):
-        self.nn = NeuralNetwork(lr, inp_dim, hidden_dims, out_dim)
+        self.nn = NeuralNetwork(lr, inp_dim, l1_dim, l2_dim, out_dim)
         self.states = np.zeros((mem_size, inp_dim[0]), dtype=np.float32)
         self.actions = np.zeros(mem_size, dtype=np.int32)
         self.rewards = np.zeros(mem_size, dtype=np.float32)
