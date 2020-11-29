@@ -1,5 +1,6 @@
+from models.bots import SnakeBot
+
 from snake import SnakeGame
-from models.dq_agent import Agent
 from tkinter import Tk, Canvas
 
 
@@ -10,12 +11,9 @@ COLORS = [
     '#c9d5d6'
 ]
 
-WIDTH, HEIGHT = (10, 10) # Matrix size
+WIDTH, HEIGHT = (6, 6) # Matrix size
 PIXEL_SIZE = 35 # Resolution of each box
-SPEED = 10
-
-PATH = './nn/'
-FILENAME = '10x10.pth'
+SPEED = 1
 
 global game
 global agent
@@ -25,7 +23,6 @@ def draw_frame():
 
     # Generate a matrix based on game state
     matrix = game.generate_matrix()
-    state = game.get_flat_matrix()
     for i in range(WIDTH):
         for j in range(HEIGHT):
             color = matrix[i][j]
@@ -41,8 +38,10 @@ def draw_frame():
                 outline=COLORS[0]
             )
     
-    # Deep Learning Agent
-    prediction = agent.predict(state)
+    # The AI controller
+    prediction = agent.predict(game.snake, game.food)
+    
+    
     # Move snake based on prediction
     game.move(prediction)
     # Restart on collision
@@ -51,15 +50,9 @@ def draw_frame():
     
     root.after(int(1000 / SPEED), draw_frame)
 
-
-# Initialize deep learning agent
-agent = Agent(inp_dim=[WIDTH * HEIGHT + 12], l1_dim=256, l2_dim=256, out_dim=4)
-
-# Load nn
-agent.load_nn(PATH + FILENAME)
-
+agent = SnakeBot(WIDTH, HEIGHT)
 game = SnakeGame(WIDTH, HEIGHT)
-agent.predict(game.get_flat_matrix())
+
 
 # game
 resolution_x = PIXEL_SIZE * WIDTH

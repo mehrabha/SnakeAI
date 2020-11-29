@@ -119,7 +119,6 @@ class SnakeGame:
             matrix[x][y] = i + 4
 
         head = self.snake[-1]
-        tail = self.snake[0]
         matrix[head[0]][head[1]] = 2
 
         food = self.food
@@ -149,16 +148,18 @@ class SnakeGame:
         vision[4] = food[0]
         vision[5] = food[1]
         
-        # Food distance
-        vision[6] = self.get_distance()
+        # Is food reachable
+        vision[6] = self.is_reachable(head, self.generate_matrix())
         
         # Head location
         vision[7] = head[0]
         vision[8] = head[1]
         
-        # Tail location
-        vision[9] = tail[0]
-        vision[10] = tail[1]
+        # Length
+        vision[9] = self.score()
+        
+        # Steps since last food
+        vision[10] = self.steps_since_last
         
         # Direction
         vision[11] = self.dir
@@ -175,7 +176,40 @@ class SnakeGame:
     def over(self):
         return not self.status
 
-
+    def is_reachable(self, start, mtx, visited=None):
+        if visited is None:
+            visited = np.zeros(shape=self.shape, dtype=np.bool)
+        
+        x = start[0]
+        y = start[1]
+        
+        xy_in_range = (0 <= x < self.shape[0] and
+                       0 <= y < self.shape[1])
+        
+        if not xy_in_range or visited[x][y]:
+            return False
+        else:
+            visited[x][y] = True
+        
+        # Current position is food
+        if mtx[x][y] == 3:
+            return True
+        
+        # Current position is an obstacle
+        if mtx[x][y] not in [0, 2]:
+            return False
+        
+        return (
+            # Check left
+            self.is_reachable((x - 1, y), mtx, visited) or
+            # Check right
+            self.is_reachable((x + 1, y), mtx, visited) or
+            # Check down
+            self.is_reachable((x, y + 1), mtx, visited) or
+            # Check up
+            self.is_reachable((x, y - 1), mtx, visited)
+        )
+        
     def spawn_food(self):
         if len(self.snake) == self.shape[0] * self.shape[1]:
             self.begin()
