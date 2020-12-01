@@ -1,51 +1,44 @@
 import torch as t
 import numpy as np
+    
 
 class Agent:
-    def __init__(self, nn, inp_dim, out_dim, gamma=.99, 
-                 batch_size=256, mem_size=100000):
+    def __init__(self, nn, inp_dim, out_dim, memory, gamma=.99):
         self.nn = nn
-        self.states = np.zeros((mem_size, inp_dim[0]), dtype=np.float32)
-        self.actions = np.zeros(mem_size, dtype=np.int32)
-        self.rewards = np.zeros(mem_size, dtype=np.float32)
-        self.new_states = np.zeros((mem_size, inp_dim[0]), dtype=np.float32)
-        self.terminal = np.zeros(mem_size, dtype=np.bool)
-        
         self.gamma = gamma
-        self.batch_size = batch_size
-        self.mem_size = mem_size
-        
+        self.memory = memory
         self.learned = 0
         
     def store(self, state, action, reward, new_state, terminated):
-        indx = self.learned
-        if indx >= self.mem_size:
-            indx = indx % self.mem_size
-            
-        self.states[indx] = state
-        self.new_states[indx] = new_state
-        self.actions[indx] = action
-        self.rewards[indx] = reward
-        self.terminal[indx] = terminated
+        # Calculate loss
+        q_eval = self.nn.forward([state])[action].item()
+        q_target = reward
+        q_next = 0
         
+        if not terminated:
+            q_next = t.max(self.nn.forward([new_state]))[0]
+        
+        q_target += self.gamma * q_next
+        loss = (q_target - q_eval) ** 2
+        
+        # Add experience to buffer
+        self.memory.add(state, action, reward, new_state, terminated, loss)
         self.learned += 1
-        
+    
     def learn(self, n_batches=1):
-        bound = min(self.mem_size, self.learned)
-        
-        if bound < self.batch_size:
-            return  
+        if not self.is_batch_full():
+            return
         
         # Create n batches (size=batch_size) and learn
         for i in range(n_batches):
             self.nn.optimizer.zero_grad()
-            batch = np.random.choice(bound, self.batch_size, replace=False)
+            sample = self.memory.sample()
             
-            states_batch = t.tensor(self.states[batch]).to(self.nn.device)
-            actions_batch = self.actions[batch]
-            rewards_batch = t.tensor(self.rewards[batch]).to(self.nn.device)
-            new_states_batch = t.tensor(self.new_states[batch]).to(self.nn.device)
-            terminal_batch = t.tensor(self.terminal[batch]).to(self.nn.device)
+            states_batch = t.tensor(sample[0]).to(self.nn.device)
+            new_states_batch = t.tensor(sample[1]).to(self.nn.device)
+            actions_batch = sample[2]
+            rewards_batch = t.tensor(sample[3]).to(self.nn.device)
+            terminal_batch = t.tensor(sample[4]).to(self.nn.device)
             
             indexes = t.arange(self.batch_size)
             q_eval = self.nn.forward(states_batch)[indexes, actions_batch]

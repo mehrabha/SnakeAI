@@ -1,14 +1,15 @@
 from snake import SnakeGame
 from models.dq_agent import Agent
-from models.neural_nets import NeuralNetwork, NeuralNetworkSingle
+from models.neural_nets import NeuralNetwork
+from models.replay_buffer import ReplayBuffer
 
 global game
 global agent
 
-WIDTH, HEIGHT = (6, 6) # Matrix size
+WIDTH, HEIGHT = (12, 12) # Matrix size
 PATH = './nn/'
 #FILENAME = str(WIDTH) + 'x' + str(HEIGHT) + '.pth'
-FILENAME = 's6_512.pth'
+FILENAME = 's12_256x256.pth'
 global game
 global agent
 
@@ -40,14 +41,15 @@ def reward_function(game, prediction):
         
             
 
-def train(path, loops, steps, eps=.03, decay=0.5, eps_min=.03, reset=False):
-    if not reset:
+def train(path, loops, steps, eps=.03, decay=0.5, eps_min=.03, new=True):
+    if not new:
         agent.load_nn(path)
     else:
         agent.save_nn(path)
         
     for i in range(loops):
         print('Loop:', i, '- Current eps=', round(eps, 5), '- file=', path)
+        max_length = 3
         lengths = 0
         num_games = 0
         games_won = 0
@@ -83,15 +85,19 @@ def train(path, loops, steps, eps=.03, decay=0.5, eps_min=.03, reset=False):
 game = SnakeGame(WIDTH, HEIGHT)
 
 # Initialize Neural Net
-nn = NeuralNetworkSingle(inp_dim=[WIDTH * HEIGHT + 22], out_dim=4, l1_dim=512,
-                         lr=.00005)
+nn = NeuralNetwork(inp_dim=[WIDTH * HEIGHT + 22], out_dim=4, 
+                   l1_dim=256, l2_dim=256, lr=.00003)
+
+# Initialize memory
+memory = ReplayBuffer(inp_dim=[WIDTH * HEIGHT + 22],
+                      mem_size=20000, batch_size=64)
 
 # Initialize Deep Q Agent
 agent = Agent(nn=nn, inp_dim=[WIDTH * HEIGHT + 22], out_dim=4, 
-              gamma=.99, batch_size=64, mem_size=20000)
+              memory=memory, gamma=.99)
 
 # Run training loop
-train(PATH + FILENAME, loops=500, steps=10000, eps=1, 
-      decay=.95, eps_min=.0001, reset=True)
+train(PATH + FILENAME, loops=500, steps=5000, eps=.0001, 
+      decay=.92, eps_min=.0001, new=False)
 
 

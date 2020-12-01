@@ -15,9 +15,9 @@ PIXEL_SIZE = 35 # Resolution of each box
 
 SPEED = 10
 
-WIDTH, HEIGHT = (6, 6) # Matrix size
+WIDTH, HEIGHT = (12, 12) # Matrix size
 PATH = './nn/'
-FILENAME = 's6_256x256.pth'
+FILENAME = 's12_256x256.pth'
 
 global game
 global agent
