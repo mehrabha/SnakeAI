@@ -1,11 +1,10 @@
-from models.neural_nets import NeuralNetwork
 import torch as t
 import numpy as np
 
 class Agent:
-    def __init__(self, inp_dim, l1_dim, l2_dim, out_dim, gamma=.99, 
-                 lr=.03, batch_size=256, mem_size=100000):
-        self.nn = NeuralNetwork(lr, inp_dim, l1_dim, l2_dim, out_dim)
+    def __init__(self, nn, inp_dim, out_dim, gamma=.99, 
+                 batch_size=256, mem_size=100000):
+        self.nn = nn
         self.states = np.zeros((mem_size, inp_dim[0]), dtype=np.float32)
         self.actions = np.zeros(mem_size, dtype=np.int32)
         self.rewards = np.zeros(mem_size, dtype=np.float32)
@@ -31,30 +30,32 @@ class Agent:
         
         self.learned += 1
         
-    def learn(self):
+    def learn(self, n_batches=1):
         bound = min(self.mem_size, self.learned)
         
         if bound < self.batch_size:
             return  
         
-        self.nn.optimizer.zero_grad()
-        batch = np.random.choice(bound, self.batch_size, replace=False)
-        
-        states_batch = t.tensor(self.states[batch]).to(self.nn.device)
-        actions_batch = self.actions[batch]
-        rewards_batch = t.tensor(self.rewards[batch]).to(self.nn.device)
-        new_states_batch = t.tensor(self.new_states[batch]).to(self.nn.device)
-        terminal_batch = t.tensor(self.terminal[batch]).to(self.nn.device)
-        
-        indexes = t.arange(self.batch_size).to(self.nn.device)
-        q_eval = self.nn.forward(states_batch)[indexes, actions_batch]
-        q_next = t.max(self.nn.forward(new_states_batch), dim=1)[0]
-        q_next[terminal_batch] = 0.0
-        q_target = rewards_batch + self.gamma * q_next
-        
-        loss = self.nn.loss(q_target, q_eval).to(self.nn.device)
-        loss.backward()
-        self.nn.optimizer.step()
+        # Create n batches (size=batch_size) and learn
+        for i in range(n_batches):
+            self.nn.optimizer.zero_grad()
+            batch = np.random.choice(bound, self.batch_size, replace=False)
+            
+            states_batch = t.tensor(self.states[batch]).to(self.nn.device)
+            actions_batch = self.actions[batch]
+            rewards_batch = t.tensor(self.rewards[batch]).to(self.nn.device)
+            new_states_batch = t.tensor(self.new_states[batch]).to(self.nn.device)
+            terminal_batch = t.tensor(self.terminal[batch]).to(self.nn.device)
+            
+            indexes = t.arange(self.batch_size)
+            q_eval = self.nn.forward(states_batch)[indexes, actions_batch]
+            q_next = t.max(self.nn.forward(new_states_batch), dim=1)[0]
+            q_next[terminal_batch] = 0.0
+            q_target = rewards_batch + self.gamma * q_next
+            
+            loss = self.nn.loss(q_target, q_eval).to(self.nn.device)
+            loss.backward()
+            self.nn.optimizer.step()
         
         
     def predict(self, state, randomness=0):

@@ -4,7 +4,7 @@ import torch.nn.functional as f
 import torch.optim as optim
 
 class NeuralNetwork(nn.Module):
-    def __init__(self, lr, inp_dim, l1_dim, l2_dim, out_dim):
+    def __init__(self, inp_dim, out_dim, l1_dim, l2_dim, lr=.03):
         super(NeuralNetwork, self).__init__()
         
         self.layer1 = nn.Linear(*inp_dim, l1_dim)
@@ -20,7 +20,21 @@ class NeuralNetwork(nn.Module):
         x = f.relu(x)
         x = self.layer2(x)
         x = f.relu(x)
+        return self.output(x)
         
-        out = self.output(x)
+    
+class NeuralNetworkSingle(nn.Module):
+    def __init__(self, inp_dim, out_dim, l1_dim=256, lr=.03):
+        super(NeuralNetworkSingle, self).__init__()
         
-        return out
+        self.layer1 = nn.Linear(*inp_dim, l1_dim)
+        self.output = nn.Linear(l1_dim, out_dim)
+        self.optimizer = optim.Adam(self.parameters(), lr=lr)
+        self.loss = nn.MSELoss()
+        self.device = t.device('cuda:0')
+        self.to(self.device)
+    
+    def forward(self, state):
+        x = self.layer1(state)
+        x = f.relu(x)
+        return self.output(x)

@@ -39,6 +39,7 @@ def draw_frame():
             )
     
     # The AI controller
+    game.get_flat_matrix()
     prediction = agent.predict(game.snake, game.food)
     
     

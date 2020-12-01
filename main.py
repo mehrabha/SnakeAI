@@ -1,5 +1,6 @@
 from snake import SnakeGame
 from models.dq_agent import Agent
+from models.neural_nets import NeuralNetwork, NeuralNetworkSingle
 from tkinter import Tk, Canvas
 
 
@@ -10,12 +11,13 @@ COLORS = [
     '#c9d5d6'
 ]
 
-WIDTH, HEIGHT = (10, 10) # Matrix size
 PIXEL_SIZE = 35 # Resolution of each box
+
 SPEED = 10
 
+WIDTH, HEIGHT = (6, 6) # Matrix size
 PATH = './nn/'
-FILENAME = '10x10.pth'
+FILENAME = 's6_256x256.pth'
 
 global game
 global agent
@@ -46,14 +48,20 @@ def draw_frame():
     # Move snake based on prediction
     game.move(prediction)
     # Restart on collision
-    if game.over():
+    if game.over() or game.won():
+        print('Score:', game.score(), 'Steps:', game.steps)
         game.begin()
+        
     
     root.after(int(1000 / SPEED), draw_frame)
 
 
+#Initialize nn
+nn = NeuralNetwork(inp_dim=[WIDTH * HEIGHT + 22], out_dim=4, 
+                   l1_dim=256, l2_dim=256)
+
 # Initialize deep learning agent
-agent = Agent(inp_dim=[WIDTH * HEIGHT + 12], l1_dim=256, l2_dim=256, out_dim=4)
+agent = Agent(nn=nn, inp_dim=[WIDTH * HEIGHT + 22], out_dim=4)
 
 # Load nn
 agent.load_nn(PATH + FILENAME)
