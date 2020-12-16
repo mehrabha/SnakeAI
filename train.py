@@ -102,12 +102,12 @@ nn = NeuralNetwork(inp_dim=[VIEW * VIEW + 8], out_dim=4,
                    l1_dim=256, l2_dim=128, lr=.0001)
 
 # Initialize memory
-memory = ReplayBuffer(inp_dim=[VIEW * VIEW + 8], mem_size=64, 
+memory = ReplayBuffer(inp_dim=[VIEW * VIEW + 8], mem_size=100000, 
                       batch_size=64, priority_scale=PRIO)
 
 # Initialize Deep Q Agent
 agent = Agent(nn=nn, inp_dim=[VIEW * VIEW + 8], out_dim=4, 
-              memory=memory, gamma=0)
+              memory=memory, gamma=.99)
 
 # Run training loop
 train(game, agent, PATH + FILENAME, loops=100, steps=1000, eps=0, 
