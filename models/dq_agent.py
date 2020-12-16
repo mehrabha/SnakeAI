@@ -3,30 +3,19 @@ import numpy as np
     
 
 class Agent:
-    def __init__(self, nn, inp_dim, out_dim, memory, gamma=.99):
+    def __init__(self, nn, inp_dim, out_dim, memory=None, gamma=.99):
         self.nn = nn
         self.gamma = gamma
         self.memory = memory
         self.learned = 0
         
     def store(self, state, action, reward, new_state, terminated):
-        # Calculate loss
-        q_eval = self.nn.forward([state])[action].item()
-        q_target = reward
-        q_next = 0
-        
-        if not terminated:
-            q_next = t.max(self.nn.forward([new_state]))[0]
-        
-        q_target += self.gamma * q_next
-        loss = (q_target - q_eval) ** 2
-        
         # Add experience to buffer
-        self.memory.add(state, action, reward, new_state, terminated, loss)
+        self.memory.add(state, action, reward, new_state, terminated)
         self.learned += 1
     
     def learn(self, n_batches=1):
-        if not self.is_batch_full():
+        if not self.memory.is_mem_full():
             return
         
         # Create n batches (size=batch_size) and learn
@@ -40,7 +29,7 @@ class Agent:
             rewards_batch = t.tensor(sample[3]).to(self.nn.device)
             terminal_batch = t.tensor(sample[4]).to(self.nn.device)
             
-            indexes = t.arange(self.batch_size)
+            indexes = t.arange(actions_batch.size)
             q_eval = self.nn.forward(states_batch)[indexes, actions_batch]
             q_next = t.max(self.nn.forward(new_states_batch), dim=1)[0]
             q_next[terminal_batch] = 0.0

@@ -1,3 +1,4 @@
+import numpy as np
 from snake import SnakeGame
 from models.dq_agent import Agent
 from models.neural_nets import NeuralNetwork
@@ -6,12 +7,11 @@ from models.replay_buffer import ReplayBuffer
 global game
 global agent
 
-WIDTH, HEIGHT = (12, 12) # Matrix size
+SIZE = 13
+VIEW = 7
+PRIO = 1
 PATH = './nn/'
-#FILENAME = str(WIDTH) + 'x' + str(HEIGHT) + '.pth'
-FILENAME = 's12_256x256.pth'
-global game
-global agent
+FILENAME = 'model1.pth'
 
 def reward_function(game, prediction):
     # Before move
@@ -23,25 +23,26 @@ def reward_function(game, prediction):
     
     # Restart on collision, adjust score
     if game.over():
-        return -1 * (game.score() ** 1.5)
+        return -1 * (game.score() ** 1.25)
     
     score_diff = game.score() - score_old
     if score_diff > 0:
-        return game.score() ** 1.4
+        return game.score() ** 1.2
     
     if game.get_distance() < dist_old:
-        if len(game.snake) + 20 > game.steps_since_last:
+        if len(game.snake) + 40 > game.steps_since_last:
             return 3 / len(game.snake)
         else:
             return 0
     elif game.get_distance() == dist_old:
         return 0
     else:
-        return -3 * (1 + game.steps_since_last / 50) / len(game.snake)
+        return -3 * (1 + game.steps_since_last / 100) / len(game.snake)
         
             
 
-def train(path, loops, steps, eps=.03, decay=0.5, eps_min=.03, new=True):
+def train(game, agent, path, loops, steps, eps=.03, decay=0.5, 
+          eps_min=.03, new=True):
     if not new:
         agent.load_nn(path)
     else:
@@ -49,18 +50,31 @@ def train(path, loops, steps, eps=.03, decay=0.5, eps_min=.03, new=True):
         
     for i in range(loops):
         print('Loop:', i, '- Current eps=', round(eps, 5), '- file=', path)
-        max_length = 3
         lengths = 0
+        max_length = 0
         num_games = 0
         games_won = 0
         for j in range(steps):
-            state = game.get_flat_matrix()
+            state = game.generate_matrix(centered=True, view_dist=VIEW, 
+                                         flatten=True, r_type=np.float32)
             prediction = agent.predict(state, eps)
             reward = reward_function(game, prediction)
-            new_state = game.get_flat_matrix()
+            new_state = game.generate_matrix(centered=True, view_dist=VIEW, 
+                                             flatten=True, r_type=np.float32)
             terminated = game.over()
             
-            agent.store(state, prediction, reward, new_state, terminated)
+            # Prioritize bigger snakes
+            choice = False
+            if game.score() > max_length:
+                max_length = game.score()
+                choice = True
+            else:
+                random = np.random.random()
+                if random < game.score() / max_length:
+                    choice = True
+            
+            if choice:
+                agent.store(state, prediction, reward, new_state, terminated)
             agent.learn()
             
             if game.over() or game.won():
@@ -80,24 +94,23 @@ def train(path, loops, steps, eps=.03, decay=0.5, eps_min=.03, new=True):
     agent.save_nn(path)
 
 
-
 # Initialize game
-game = SnakeGame(WIDTH, HEIGHT)
+game = SnakeGame(SIZE, SIZE)
 
 # Initialize Neural Net
-nn = NeuralNetwork(inp_dim=[WIDTH * HEIGHT + 22], out_dim=4, 
-                   l1_dim=256, l2_dim=256, lr=.00003)
+nn = NeuralNetwork(inp_dim=[VIEW * VIEW + 8], out_dim=4, 
+                   l1_dim=256, l2_dim=128, lr=.0001)
 
 # Initialize memory
-memory = ReplayBuffer(inp_dim=[WIDTH * HEIGHT + 22],
-                      mem_size=20000, batch_size=64)
+memory = ReplayBuffer(inp_dim=[VIEW * VIEW + 8], mem_size=64, 
+                      batch_size=64, priority_scale=PRIO)
 
 # Initialize Deep Q Agent
-agent = Agent(nn=nn, inp_dim=[WIDTH * HEIGHT + 22], out_dim=4, 
-              memory=memory, gamma=.99)
+agent = Agent(nn=nn, inp_dim=[VIEW * VIEW + 8], out_dim=4, 
+              memory=memory, gamma=0)
 
 # Run training loop
-train(PATH + FILENAME, loops=500, steps=5000, eps=.0001, 
-      decay=.92, eps_min=.0001, new=False)
+train(game, agent, PATH + FILENAME, loops=100, steps=1000, eps=0, 
+      decay=.90, eps_min=.001, new=True)
 
 
