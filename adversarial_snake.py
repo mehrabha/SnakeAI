@@ -17,7 +17,7 @@ COLORS = [
 SIZE = 10
 VIEW = 10
 PIXEL_SIZE = 40 # Resolution of each box
-SPEED = 10
+SPEED = 15
 
 global game
 global agent

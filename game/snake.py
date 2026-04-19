@@ -243,17 +243,22 @@ class SnakeGame:
     def spawn_food(self):
         x = random.randint(0, self.shape[0] - 1)
         y = random.randint(0, self.shape[1] - 1)
-        if (x, y) in self.snake:
+        if (x, y) in self.snake or (x, y) in self.snake2:
             self.spawn_food()
         else:
+            print("Score! Snake 1 length: {}".format(len(self.snake)))
+            if self.snake2:
+                print("Snake 2 length: {}".format(len(self.snake2)))
+            print("...")
+            print("")
             self.food = (x, y)
 
     def score(self):
         if self.winner >= 0:
             if self.winner == 0:
-                return 2 * len(self.snake)
+                return len(self.snake)
             else:
-                return 2 * len(self.snake2)
+                return len(self.snake2)
         return len(self.snake)
     
     def get_distance(self):
