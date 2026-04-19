@@ -1,6 +1,6 @@
 from models.bots import SnakeBot
 
-from snake import SnakeGame
+from game.snake import SnakeGame
 from tkinter import Tk, Canvas
 
 
@@ -17,7 +17,7 @@ COLORS = [
 SIZE = 10
 VIEW = 10
 PIXEL_SIZE = 40 # Resolution of each box
-SPEED = 20
+SPEED = 15
 
 global game
 global agent
@@ -27,10 +27,9 @@ def draw_frame(turn=0):
 
     # Generate a matrix based on game state
     matrix = game.generate_matrix(centered=False)
-    print()
     for i in range(VIEW):
         for j in range(VIEW):
-            color = matrix[i][j]
+            color = get_color(matrix[i][j])
             border = int(PIXEL_SIZE * .04)
             x = i * PIXEL_SIZE
             y = j * PIXEL_SIZE
@@ -39,7 +38,7 @@ def draw_frame(turn=0):
                 x + border, y + border,
                 x + PIXEL_SIZE - border,
                 y + PIXEL_SIZE - border,
-                fill=COLORS[color],
+                fill=color,
                 outline=COLORS[0]
             )
     
@@ -61,10 +60,27 @@ def draw_frame(turn=0):
     
     root.after(int(1000 / SPEED), draw_frame, turn)
 
+def get_color(val):
+    if isinstance(val, int):
+        return COLORS[val]
+    elif isinstance(val, str):
+        if 'body1' in val:
+            hexstr = COLORS[1][1: ]
+        elif 'body2' in val:
+            hexstr = COLORS[4][1: ]
+
+        rgb = tuple(bytes.fromhex(hexstr))
+        color_intensity = .97 ** (int(val.split('-')[1]) - 1)
+
+        rgb = (rgb[0] * color_intensity, rgb[1] * color_intensity, rgb[2] * color_intensity)
+
+        rgb = [int(rgb[0]), int(rgb[1]), int(rgb[2])]
+
+        return '#{:02x}{:02x}{:02x}'.format(*rgb)
+
 agent = SnakeBot(SIZE, SIZE)
 agent2 = SnakeBot(SIZE, SIZE)
 game = SnakeGame(SIZE, SIZE, player2=True)
-
 
 # game
 resolution_x = PIXEL_SIZE * VIEW

@@ -1,4 +1,4 @@
-from snake import SnakeGame
+from game.snake import SnakeGame
 from models.dq_agent import Agent
 from models.neural_nets import NeuralNetwork
 

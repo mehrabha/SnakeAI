@@ -130,7 +130,7 @@ class SnakeGame:
                         flatten=False, r_type=np.int32):
         
         view_dist = self.shape[0] if view_dist is None else view_dist
-        matrix = np.zeros(shape=(view_dist, view_dist), dtype=r_type)
+        matrix = np.zeros(shape=(view_dist, view_dist), dtype=object)
         
         translation = (0, 0)
         if centered:
@@ -141,23 +141,23 @@ class SnakeGame:
                 shape = self.shape[0]
                 translation = (translation[0] - int((shape - view_dist) / 2), 
                                translation[1] - int((shape - view_dist) / 2))
-        for x, y in self.snake:
-            new_x = x + translation[0]
-            new_y = y + translation[1]
+        for i in range(len(self.snake)):
+            new_x = self.snake[i][0] + translation[0]
+            new_y = self.snake[i][1] + translation[1]
             
             if self.valid_point(new_x, new_y, view_dist):
-                matrix[new_x][new_y] = 1
+                matrix[new_x][new_y] = 'body1-' + str(len(self.snake) - 1 - i)
 
         head = self.snake[-1]
         matrix[head[0] + translation[0]][head[1] + translation[1]] = 2
 
         if self.snake2:
-            for x, y in self.snake2:
-                new_x = x + translation[0]
-                new_y = y + translation[1]
+            for i in range(len(self.snake2)):
+                new_x = self.snake2[i][0] + translation[0]
+                new_y = self.snake2[i][1] + translation[1]
                 
                 if self.valid_point(new_x, new_y, view_dist):
-                    matrix[new_x][new_y] = 4
+                    matrix[new_x][new_y] = 'body2-' + str(len(self.snake2) - i)
 
             head = self.snake2[-1]
             matrix[head[0] + translation[0]][head[1] + translation[1]] = 5

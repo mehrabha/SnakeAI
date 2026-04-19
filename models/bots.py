@@ -58,13 +58,11 @@ class SnakeBot:
             )
             
             if valid:
-                #num_traps = self.check_traps(snake, new_dir) ** self.get_state(snake)
                 min_dist = distance(new_dir, food)
                 dists.append((min_dist, idx))
         
         dists.sort()
         if len(dists) > 0:
-            print(str(dists) + ', choice= ' + str(dists[0][1]))
             return dists[0][1]
         else:
             return 0
