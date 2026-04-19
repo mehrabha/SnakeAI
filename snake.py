@@ -35,54 +35,69 @@ class SnakeGame:
     """
 
     
-    def __init__(self, width, height):
+    def __init__(self, width, height, player2=False):
         self.snake = []
+        self.snake2 = []
+        self.player2 = player2
         self.food = (0, 0)
         self.shape = (width, height)
         self.steps = 0
         self.steps_since_last = 0
         self.status = False
-        self.won_status = False
-        self.dir = 1
         self.begin()
 
 
     def begin(self):
         x = int(self.shape[0]/2)
-        y = int(self.shape[1]/2)
+        y = int(self.shape[1]/3)
         self.snake = [(x - 1, y), (x, y), (x + 1, y)]
         self.spawn_food()
         self.steps = 0
         self.steps_since_last = 0
         self.status = True
-        self.won_status = False
+        self.winner = -1
         self.dir = 1
+        if self.player2:
+            self.snake2 = [(x - 1, y * 2), (x, y * 2), (x + 1, y* 2)]
+            self.dir2 = 1
 
-
-    def move(self, direction):
-        if not self.status or self.won_status:
-            return
+    def move(self, move, player=0):
+        if player > 1:
+            raise ValueError("Player number: " + str(player) + "is invalid! Valid range <= 1")
+        if player > 0 and not self.snake2:
+            raise ValueError("Player number: " + str(player) + " which is > 0 for single agent game")
         
+        if not self.status or self.winner >= 0:
+            return
+         
+        dir = self.dir if player == 0 else self.dir2
         backwards = (
-            (self.dir == 0 and direction == 2) or
-            (self.dir == 2 and direction == 0) or
-            (self.dir == 1 and direction == 3) or
-            (self.dir == 3 and direction == 1)
+            (dir == 0 and move == 2) or
+            (dir == 2 and move == 0) or
+            (dir == 1 and move == 3) or
+            (dir == 3 and move == 1)
         )
 
-        if not backwards and self.dir != direction:
-            self.dir = direction
+        if not backwards:
+            if player == 0 and self.dir != move:
+                self.dir = move
+            elif player == 1 and self.dir2 != move:
+                self.dir2 = move
 
-        snake = self.snake
+        snake = self.snake if player == 0 else self.snake2
+
+        move_dir = move_data[self.dir] if player == 0 else move_data[self.dir2]
+
         # head
-        x = snake[-1][0] + move_data[self.dir][0]
-        y = snake[-1][1] + move_data[self.dir][1]
+        x = snake[-1][0] + move_dir[0]
+        y = snake[-1][1] + move_dir[1]
 
         # check collision
         self.status = (
             0 <= x < self.shape[0] and
             0 <= y < self.shape[1] and
-            (x, y) not in snake
+            (x, y) not in self.snake and 
+            (x, y) not in self.snake2
         )
         
         if self.status:
@@ -90,10 +105,10 @@ class SnakeGame:
             food = self.food
             if x == food[0] and y == food[1]:
                 snake.append(food)
-                if len(self.snake) < self.shape[0] * self.shape[1]:
+                if len(self.snake) + len(self.snake2) < self.shape[0] * self.shape[1]:
                     self.spawn_food()
                 else:
-                    self.won_status = True
+                    self.winner = player    # map is filled with snakes, hence game cleared
                 self.steps_since_last = 0
             else:
             # move
@@ -102,7 +117,14 @@ class SnakeGame:
                 snake[-1] = (x, y)
                 self.steps_since_last += 1
             self.steps += 1
-        
+        else:
+            print("Collision! Game over for player " + str(player))
+            print("Collision on " + str(x) + ', ' + str(y))
+            print("Move: " + str(move))
+            if self.player2:
+                self.winner = 1 - player    # if the snake hits boundary, the other one wins
+            # else status becomes false with no winners
+                
         
     def generate_matrix(self, centered=False, view_dist=None, 
                         flatten=False, r_type=np.int32):
@@ -112,12 +134,13 @@ class SnakeGame:
         
         translation = (0, 0)
         if centered:
+            # for drawing grid centered at snake head
             translation = (int(self.shape[0]/ 2) - self.snake[-1][0],
                            int(self.shape[1]/ 2) - self.snake[-1][1])
             if view_dist < self.shape[0]:
                 shape = self.shape[0]
-                translation = (translation[0] - int((shape-view_dist) / 2), 
-                               translation[1] - int((shape-view_dist) / 2))
+                translation = (translation[0] - int((shape - view_dist) / 2), 
+                               translation[1] - int((shape - view_dist) / 2))
         for x, y in self.snake:
             new_x = x + translation[0]
             new_y = y + translation[1]
@@ -127,6 +150,17 @@ class SnakeGame:
 
         head = self.snake[-1]
         matrix[head[0] + translation[0]][head[1] + translation[1]] = 2
+
+        if self.snake2:
+            for x, y in self.snake2:
+                new_x = x + translation[0]
+                new_y = y + translation[1]
+                
+                if self.valid_point(new_x, new_y, view_dist):
+                    matrix[new_x][new_y] = 4
+
+            head = self.snake2[-1]
+            matrix[head[0] + translation[0]][head[1] + translation[1]] = 5
 
         food = self.food
         food_x = food[0] + translation[0]
@@ -215,8 +249,11 @@ class SnakeGame:
             self.food = (x, y)
 
     def score(self):
-        if self.won_status:
-            return 2 * len(self.snake)
+        if self.winner >= 0:
+            if self.winner == 0:
+                return 2 * len(self.snake)
+            else:
+                return 2 * len(self.snake2)
         return len(self.snake)
     
     def get_distance(self):
@@ -245,5 +282,5 @@ class SnakeGame:
         return not self.status
     
     def won(self):
-        return self.won_status
+        return self.winner >= 0
 

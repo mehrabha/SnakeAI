@@ -24,7 +24,7 @@ class SnakeBot:
         self.shape = (width, height)
 
 
-    def predict(self, snake, food):
+    def predict(self, snake, food, opponent=()):
         """
 
         Params
@@ -53,34 +53,21 @@ class SnakeBot:
             valid = (
                 0 <= new_dir[0] < self.shape[0] and
                 0 <= new_dir[1] < self.shape[1] and
-                new_dir not in snake
+                new_dir not in snake and
+                new_dir not in opponent
             )
             
             if valid:
-                num_traps = self.check_traps(snake, new_dir) ** self.get_state(snake)
+                #num_traps = self.check_traps(snake, new_dir) ** self.get_state(snake)
                 min_dist = distance(new_dir, food)
-                dists.append((num_traps + min_dist, idx))
+                dists.append((min_dist, idx))
         
         dists.sort()
         if len(dists) > 0:
+            print(str(dists) + ', choice= ' + str(dists[0][1]))
             return dists[0][1]
         else:
             return 0
-
-    def check_traps(self, snake, dir):
-        result = 0
-
-        for x, y in move_data:
-            new_dir = (dir[0] + x, dir[1] + y)
-            blocked = (
-                not (0 <= new_dir[0] < self.shape[0]) or
-                not (0 <= new_dir[1] < self.shape[1]) or
-                new_dir in snake
-            )
-            
-            if blocked and new_dir != snake[-1]:
-                result += 1
-        return result
 
     def get_state(self, snake):
         if len(snake) < 12:

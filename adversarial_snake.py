@@ -5,26 +5,28 @@ from tkinter import Tk, Canvas
 
 
 COLORS = [
-    '#001A23',
-    '#31493C',
-    '#7A9E7E',
-    '#c9d5d6',
-    '#000d12'
+    '#001A23',  #bg
+    '#31493C',  #snake
+    '#7A9E7E',  #snake_head
+    '#c9d5d6',  #food
+    '#493136',  #snake2
+    '#9E7A90',  #snake2_head
+    '#000d12',  #boundary
 ]
 
-SIZE = 9
-VIEW = 7
+SIZE = 10
+VIEW = 10
 PIXEL_SIZE = 40 # Resolution of each box
-SPEED = 2
+SPEED = 20
 
 global game
 global agent
     
-def draw_frame():
+def draw_frame(turn=0):
     canvas.delete("all")
 
     # Generate a matrix based on game state
-    matrix = game.generate_matrix(centered=True, view_dist=VIEW)
+    matrix = game.generate_matrix(centered=False)
     print()
     for i in range(VIEW):
         for j in range(VIEW):
@@ -41,19 +43,27 @@ def draw_frame():
                 outline=COLORS[0]
             )
     
-    prediction = agent.predict(game.snake, game.food)
-    
-    
-    # Move snake based on prediction
-    game.move(prediction)
-    # Restart on collision
+    if turn == 0:
+        prediction = agent.predict(tuple(game.snake), game.food, tuple(game.snake2))
+        
+        # Move snake based on prediction
+        game.move(prediction, player = 0)
+        turn = 1
+    else:
+        prediction = agent2.predict(tuple(game.snake2), game.food, tuple(game.snake))
+        
+        # Move snake based on prediction
+        game.move(prediction, player = 1)
+        turn = 0
+
     if game.over():
-        game.begin()
+        return
     
-    root.after(int(1000 / SPEED), draw_frame)
+    root.after(int(1000 / SPEED), draw_frame, turn)
 
 agent = SnakeBot(SIZE, SIZE)
-game = SnakeGame(SIZE, SIZE)
+agent2 = SnakeBot(SIZE, SIZE)
+game = SnakeGame(SIZE, SIZE, player2=True)
 
 
 # game
