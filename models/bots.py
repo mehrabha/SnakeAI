@@ -6,23 +6,34 @@ def distance(x, y):
     return abs(y[0] - x[0]) + abs(y[1] - x[1])
 
 
-class SnakeBot:
+class GreedySnakeAgent:
     """
     Class representing an FSM based agent
 
 
     Methods
     -------
-    predict(list, tuple):
+    predict:
         Given a list containing snake's location, choose a direction for snake
 
-    
+    collsiion:
+        Helper function to check for valid moves
     """
 
 
     def __init__(self, width, height):
         self.shape = (width, height)
 
+
+    def collision(self, x, y, snake, opponent):
+        valid = (
+            0 <= x < self.shape[0] and
+            0 <= y < self.shape[1] and
+            (x, y) not in snake and
+            (x, y) not in opponent
+        )
+
+        return not valid
 
     def predict(self, snake, food, opponent=()):
         """
@@ -34,6 +45,8 @@ class SnakeBot:
             Last element in the list is head, rest are tails
         food : tuple
             Location of food.
+        opponent : list of tuples
+            List containing the locations of the opponent snake (optional)
 
         Returns
         -------
@@ -49,15 +62,7 @@ class SnakeBot:
             # head + direction = new head x
             new_dir = (snake[-1][0] + move_data[idx][0], snake[-1][1] + move_data[idx][1])
 
-            # check collision
-            valid = (
-                0 <= new_dir[0] < self.shape[0] and
-                0 <= new_dir[1] < self.shape[1] and
-                new_dir not in snake and
-                new_dir not in opponent
-            )
-            
-            if valid:
+            if not self.collision(new_dir[0], new_dir[1], snake, opponent):  # check collision
                 min_dist = distance(new_dir, food)
                 dists.append((min_dist, idx))
         
@@ -67,10 +72,124 @@ class SnakeBot:
         else:
             return 0
 
-    def get_state(self, snake):
-        if len(snake) < 12:
-            return 1
-        elif len(snake) < 24:
-            return 2
+class MinimaxSnakeAgent:
+    """
+    Class representing an FSM based agent
+
+
+    Methods
+    -------
+    predict(list, tuple):
+        Given a list containing snake's location, choose a direction for snake
+
+    
+    """
+
+    def __init__(self, width, height):
+        self.shape = (width, height)
+
+    def collision(self, x, y, snake, opponent):
+        valid = (
+            0 <= x < self.shape[0] and
+            0 <= y < self.shape[1] and
+            (x, y) not in snake and
+            (x, y) not in opponent
+        )
+
+        return not valid
+    
+    def predict(self, snake, food, opponent):
+        """
+
+        Params
+        ------
+        snake : list of tuples
+            List containing the locations of snake.
+            Last element in the list is head, rest are tails
+        food : tuple
+            Location of food.
+        opponent : list of tuples
+            List containing the locations of the opponent snake (required for minimax agent)
+
+        Returns
+        -------
+        int :
+            Direction of snake
+        """
+
+        scores = []
+        for idx in range(4):
+            # score all possible moves
+
+            x = snake[-1][0] + move_data[idx][0]
+            y = snake[-1][1] + move_data[idx][1]
+
+            if not self.collision(x, y, snake, opponent):
+                # transition state and run minimax
+                state = snake.copy()
+                state.pop(0)
+                state.append((x, y))
+
+                score = self.minimax(state, food, opponent)
+                scores.append((idx, score))
+        
+        if len(scores) > 0:
+            scores.sort(key= lambda x: x[1])
+            return scores[-1][0]
+        return 0
+    
+    def minimax(self, snake, food, opponent, player=0, depth=0, limit=10):
+        # estimate future score for a given state
+        # evaluate until food is found or collision happens
+
+        if snake[-1] == food:
+            return len(snake)  
+        elif opponent[-1] == food:
+            return -1 * len(opponent)
+        
+        # if recursion limit reached, estimate the winner
+        if not depth < limit:
+            # score based on who is closer to goal
+            if distance(snake[-1], food) <= distance(opponent[-1], food):
+                return len(snake) / 2
+            else:
+                return -1 * len(opponent) / 2
+
+        agent = snake if player == 0 else opponent
+        states = []
+
+        # Iterate through the move_data array [up, right, down, left]
+        # up to 3 valid moves, branching factor = 3
+        for idx in range(4):
+            # head + direction = new head x
+            new_dir = (agent[-1][0] + move_data[idx][0], agent[-1][1] + move_data[idx][1])
+
+            # check collision
+            valid = (
+                0 <= new_dir[0] < self.shape[0] and
+                0 <= new_dir[1] < self.shape[1] and
+                new_dir not in snake and
+                new_dir not in opponent
+            )
+            
+            if valid:
+                # generate transition states
+                state = agent.copy()
+                state.pop(0)
+                state.append(new_dir)
+                states.append(state)
+        
+        if len(states) == 0:
+            # agent has no valid next move
+            return -1 * len(opponent) if player == 0 else len(snake)
         else:
-            return 3
+            scores = []
+
+            for state in states:
+                score = self.minimax(state, food, opponent, 1, depth + 1) if player == 0 else self.minimax(snake, food, state, 0, depth + 1)
+                scores.append(score)
+
+            scores.sort()
+
+            return scores[-1] if player == 0 else scores[0]
+        

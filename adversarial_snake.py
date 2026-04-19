@@ -1,4 +1,4 @@
-from models.bots import SnakeBot
+from models.bots import MinimaxSnakeAgent
 
 from game.snake import SnakeGame
 from tkinter import Tk, Canvas
@@ -17,7 +17,7 @@ COLORS = [
 SIZE = 10
 VIEW = 10
 PIXEL_SIZE = 40 # Resolution of each box
-SPEED = 15
+SPEED = 10
 
 global game
 global agent
@@ -43,13 +43,13 @@ def draw_frame(turn=0):
             )
     
     if turn == 0:
-        prediction = agent.predict(tuple(game.snake), game.food, tuple(game.snake2))
+        prediction = agent.predict(game.snake.copy(), game.food, game.snake2.copy())
         
         # Move snake based on prediction
         game.move(prediction, player = 0)
         turn = 1
     else:
-        prediction = agent2.predict(tuple(game.snake2), game.food, tuple(game.snake))
+        prediction = agent2.predict(game.snake2.copy(), game.food, game.snake.copy())
         
         # Move snake based on prediction
         game.move(prediction, player = 1)
@@ -78,8 +78,8 @@ def get_color(val):
 
         return '#{:02x}{:02x}{:02x}'.format(*rgb)
 
-agent = SnakeBot(SIZE, SIZE)
-agent2 = SnakeBot(SIZE, SIZE)
+agent = MinimaxSnakeAgent(SIZE, SIZE)
+agent2 = MinimaxSnakeAgent(SIZE, SIZE)
 game = SnakeGame(SIZE, SIZE, player2=True)
 
 # game

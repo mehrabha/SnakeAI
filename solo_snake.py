@@ -1,4 +1,4 @@
-from models.bots import SnakeBot
+from models.bots import GreedySnakeAgent
 
 from game.snake import SnakeGame
 from tkinter import Tk, Canvas
@@ -72,7 +72,7 @@ def get_color(val):
 
         return '#{:02x}{:02x}{:02x}'.format(*rgb)
 
-agent = SnakeBot(SIZE, SIZE)
+agent = GreedySnakeAgent(SIZE, SIZE)
 game = SnakeGame(SIZE, SIZE)
 
 
