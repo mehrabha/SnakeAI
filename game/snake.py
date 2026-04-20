@@ -92,15 +92,8 @@ class SnakeGame:
         x = snake[-1][0] + move_dir[0]
         y = snake[-1][1] + move_dir[1]
 
-        # check collision
-        self.status = (
-            0 <= x < self.shape[0] and
-            0 <= y < self.shape[1] and
-            (x, y) not in self.snake and 
-            (x, y) not in self.snake2
-        )
         
-        if self.status:
+        if not self.collision(x, y, self.snake, self.snake2, player):
             # check food
             food = self.food
             if x == food[0] and y == food[1]:
@@ -283,6 +276,24 @@ class SnakeGame:
             return (0 <= x < test and
                     0 <= y < test)
 
+    def collision(self, x, y, snake, opponent, turn=0):
+        if turn == 0:   # turn aka. who is moving
+            valid = (
+                0 <= x < self.shape[0] and
+                0 <= y < self.shape[1] and
+                (x, y) not in snake[1:] and
+                (x, y) not in opponent
+            )
+        elif turn == 1:
+            valid = (
+                0 <= x < self.shape[0] and
+                0 <= y < self.shape[1] and
+                (x, y) not in snake and
+                (x, y) not in opponent[1:]
+            )
+
+        return not valid
+    
     def over(self):
         return not self.status
     

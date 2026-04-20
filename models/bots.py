@@ -95,7 +95,7 @@ class MinimaxSnakeAgent:
             valid = (
                 0 <= x < self.shape[0] and
                 0 <= y < self.shape[1] and
-                (x, y) not in snake and
+                (x, y) not in snake[1:] and
                 (x, y) not in opponent
             )
         elif turn == 1:
@@ -128,6 +128,7 @@ class MinimaxSnakeAgent:
         """
 
         scores = []
+        maxscore = float('-inf')
         for idx in range(4):
             # score all possible moves
 
@@ -140,7 +141,10 @@ class MinimaxSnakeAgent:
                 state.pop(0)
                 state.append((x, y))
 
-                score = self.minimax(state, food, opponent, player=1)
+                score = self.minimax(state, food, opponent, player=1, alpha=maxscore)
+
+                if score > maxscore:
+                    maxscore = score
                 scores.append((idx, score))
         
         if len(scores) > 0:
@@ -148,16 +152,16 @@ class MinimaxSnakeAgent:
             return scores[-1][0]
         return 0
     
-    def minimax(self, snake, food, opponent, player=0, depth=0, limit=8):
+    def minimax(self, snake, food, opponent, player=0, alpha=float('-inf'), beta=float('inf'), depth=0, limit=10):
         # estimate future score for a given state
         # evaluate until food is found or collision happens
 
         penalty = .98 ** depth  # prioritize more efficient paths
 
         if snake[-1] == food:
-            return 10 * (self.calculate_reachable_space(snake, opponent) - 5) * penalty    # max score 20 based on reachable space
+            return (10 + self.safety_score(snake, opponent)) * penalty
         elif opponent[-1] == food:
-            return -10 * (self.calculate_reachable_space(opponent, snake) - 5) * penalty
+            return (-10 + self.safety_score(opponent, snake)) * penalty
         
         # if recursion limit reached, estimate the winner
         if not depth < limit:
@@ -165,7 +169,7 @@ class MinimaxSnakeAgent:
             distance1 = distance(snake[-1], food)
             distance2 = distance(opponent[-1], food)
 
-            return self.calculate_reachable_space(snake, opponent) / distance1 -  self.calculate_reachable_space(opponent, snake) / distance2
+            return (self.safety_score(snake, opponent)/distance1) - (self.safety_score(opponent, snake)/distance2)
 
         agent = snake if player == 0 else opponent
         states = []
@@ -186,26 +190,38 @@ class MinimaxSnakeAgent:
 
         if len(states) == 0:
             # agent has no valid next move
-            return -100 * len(opponent) * penalty if player == 0 else 100 * len(snake) * penalty
+            return -100 if player == 0 else 100
         else:
             scores = []
 
-            for state in states:
-                # track game states to prevent cycles and avoid re-exploring
-                score = self.minimax(state, food, opponent, 1, depth + 1) if player == 0 else self.minimax(snake, food, state, 0, depth + 1)
-                scores.append(score)
+            if player == 0:
+                for state in states:
+                    score = self.minimax(state, food, opponent, 1, alpha, beta, depth + 1, limit)
+                    if score > beta:
+                        return score
+                    if score > alpha:
+                        alpha = score
+                    scores.append(score)
+            else:
+                for state in states:
+                    score = self.minimax(snake, food, state, 0, alpha, beta, depth + 1, limit)
+                    if score < alpha:
+                        return score
+                    if score < beta:
+                        beta = score
+                    scores.append(score)
 
             scores.sort()
 
             return scores[-1] if player == 0 else scores[0]
     
-    def calculate_reachable_space(self, snake, opponent, limit=10):
+    def safety_score(self, snake, opponent, limit=10):
         visited = set()
         q = deque()
         q.append(snake[-1])
         visited.add(snake[-1])
 
-        while q and len(visited) < limit:
+        while q and len(visited) <= limit:
             node = q.popleft()
 
             for x, y in move_data:
@@ -217,4 +233,14 @@ class MinimaxSnakeAgent:
                             visited.add(new_dir)
                             q.append(new_dir)
 
-        return len(visited) - 1     # substract 1 to account for head
+        # also take next move into account
+        next_options = 0
+
+        for x, y in move_data:
+            nx = node[0] + x
+            ny = node[1] + y
+            
+            if not self.collision(nx, ny, snake, opponent):
+                next_options += 1
+
+        return (len(visited) - 4) * next_options    # substract 1 to account for head
