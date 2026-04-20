@@ -17,7 +17,7 @@ COLORS = [
 SIZE = 10
 VIEW = 10
 PIXEL_SIZE = 40 # Resolution of each box
-SPEED = 30
+SPEED = 500
 
 global game
 global agent
@@ -70,7 +70,7 @@ def draw_frame(turn=0):
 
         print("Win counts: PLAYER 1 = {}, PLAYER 2 = {}". format(PLAYER1_WINS, PLAYER2_WINS))
 
-        if (PLAYER1_WINS + PLAYER2_WINS) % 10 == 0:
+        if (PLAYER1_WINS + PLAYER2_WINS) % 50 == 0:
             print("{} game win counts: PLAYER 1 = {}, PLAYER 2 = {}". format(PLAYER1_WINS + PLAYER2_WINS, PLAYER1_WINS, PLAYER2_WINS))
             proceed = input("Continue(Y/N)?")
 
