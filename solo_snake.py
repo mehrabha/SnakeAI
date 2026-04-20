@@ -5,7 +5,7 @@ from tkinter import Tk, Canvas
 
 
 COLORS = [
-    '#001A23',  #bg
+    '#00131A',  #bg
     '#31493C',  #snake
     '#7A9E7E',  #snake_head
     '#c9d5d6',  #food
@@ -64,7 +64,7 @@ def get_color(val):
             hexstr = COLORS[4][1: ]
 
         rgb = tuple(bytes.fromhex(hexstr))
-        color_intensity = .98 ** (int(val.split('-')[1]) - 1)
+        color_intensity = .97 ** (int(val.split('-')[1]) - 1)
 
         rgb = (rgb[0] * color_intensity, rgb[1] * color_intensity, rgb[2] * color_intensity)
 

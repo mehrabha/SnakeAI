@@ -152,16 +152,16 @@ class MinimaxSnakeAgent:
             return scores[-1][0]
         return 0
     
-    def minimax(self, snake, food, opponent, player=0, alpha=float('-inf'), beta=float('inf'), depth=0, limit=10):
+    def minimax(self, snake, food, opponent, player=0, alpha=float('-inf'), beta=float('inf'), depth=0, limit=8):
         # estimate future score for a given state
         # evaluate until food is found or collision happens
 
-        penalty = .98 ** depth  # prioritize more efficient paths
+        penalty = .99 ** depth  # prioritize more efficient paths
 
         if snake[-1] == food:
-            return (10 + self.safety_score(snake, opponent)) * penalty
+            return 10 * self.safety_score(snake, opponent) * penalty
         elif opponent[-1] == food:
-            return (-10 + self.safety_score(opponent, snake)) * penalty
+            return -10 * self.safety_score(opponent, snake) * penalty
         
         # if recursion limit reached, estimate the winner
         if not depth < limit:
@@ -169,7 +169,7 @@ class MinimaxSnakeAgent:
             distance1 = distance(snake[-1], food)
             distance2 = distance(opponent[-1], food)
 
-            return (self.safety_score(snake, opponent)/distance1) - (self.safety_score(opponent, snake)/distance2)
+            return 10 * (self.safety_score(snake, opponent)/distance1 - self.safety_score(opponent, snake)/distance2) * penalty
 
         agent = snake if player == 0 else opponent
         states = []
@@ -190,7 +190,8 @@ class MinimaxSnakeAgent:
 
         if len(states) == 0:
             # agent has no valid next move
-            return -100 if player == 0 else 100
+            dist = distance(snake[-1], opponent[-1])
+            return -1000 * penalty if player == 0 else 1000 * penalty
         else:
             scores = []
 
@@ -215,7 +216,7 @@ class MinimaxSnakeAgent:
 
             return scores[-1] if player == 0 else scores[0]
     
-    def safety_score(self, snake, opponent, limit=10):
+    def safety_score(self, snake, opponent, limit=5):
         visited = set()
         q = deque()
         q.append(snake[-1])
@@ -233,14 +234,14 @@ class MinimaxSnakeAgent:
                             visited.add(new_dir)
                             q.append(new_dir)
 
-        # also take next move into account
+        # # also take next move into account
         next_options = 0
 
         for x, y in move_data:
-            nx = node[0] + x
-            ny = node[1] + y
+            nx = snake[-1][0] + x
+            ny = snake[-1][1] + y
             
             if not self.collision(nx, ny, snake, opponent):
                 next_options += 1
 
-        return (len(visited) - 4) * next_options    # substract 1 to account for head
+        return len(visited) * next_options 

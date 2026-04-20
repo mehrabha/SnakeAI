@@ -116,6 +116,7 @@ class SnakeGame:
             print("Move: " + str(move))
             if self.player2:
                 self.winner = 1 - player    # if the snake hits boundary, the other one wins
+            self.status = False
             # else status becomes false with no winners
                 
         

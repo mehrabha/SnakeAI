@@ -1,11 +1,11 @@
-from models.bots import MinimaxSnakeAgent
+from models.bots import MinimaxSnakeAgent, GreedySnakeAgent
 
 from game.snake import SnakeGame
 from tkinter import Tk, Canvas
 
 
 COLORS = [
-    '#001A23',  #bg
+    '#00131A',  #bg
     '#31493C',  #snake
     '#7A9E7E',  #snake_head
     '#c9d5d6',  #food
@@ -17,12 +17,17 @@ COLORS = [
 SIZE = 10
 VIEW = 10
 PIXEL_SIZE = 40 # Resolution of each box
-SPEED = 15
+SPEED = 30
 
 global game
 global agent
     
+PLAYER1_WINS = 0
+PLAYER2_WINS = 0
+
 def draw_frame(turn=0):
+    global PLAYER1_WINS, PLAYER2_WINS
+    
     canvas.delete("all")
 
     # Generate a matrix based on game state
@@ -56,7 +61,26 @@ def draw_frame(turn=0):
         turn = 0
 
     if game.over():
-        return
+        print('Game Over, Player {} wins!'.format(2 if turn == 0 else 1))
+
+        if turn == 0:
+            PLAYER1_WINS += 1
+        else:
+            PLAYER2_WINS += 1
+
+        print("Win counts: PLAYER 1 = {}, PLAYER 2 = {}". format(PLAYER1_WINS, PLAYER2_WINS))
+
+        if (PLAYER1_WINS + PLAYER2_WINS) % 10 == 0:
+            print("{} game win counts: PLAYER 1 = {}, PLAYER 2 = {}". format(PLAYER1_WINS + PLAYER2_WINS, PLAYER1_WINS, PLAYER2_WINS))
+            proceed = input("Continue(Y/N)?")
+
+            if proceed != 'Y':
+                return
+        print(".....")
+        
+        
+        game.begin()
+        turn = 0
     
     root.after(int(1000 / SPEED), draw_frame, turn)
 
@@ -79,7 +103,7 @@ def get_color(val):
         return '#{:02x}{:02x}{:02x}'.format(*rgb)
 
 agent = MinimaxSnakeAgent(SIZE, SIZE)
-agent2 = MinimaxSnakeAgent(SIZE, SIZE)
+agent2 = GreedySnakeAgent(SIZE, SIZE)
 game = SnakeGame(SIZE, SIZE, player2=True)
 
 # game
